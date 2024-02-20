@@ -1,0 +1,201 @@
+/* eslint-disable no-console */
+import archiver from 'archiver';
+import axios from 'axios';
+import dayjs from 'dayjs';
+import { existsSync, mkdirSync, PathLike } from 'fs';
+import { exit } from 'process';
+import simpleGit, { SimpleGit } from 'simple-git';
+import Client from 'ssh2-sftp-client';
+import { dirSync } from 'tmp';
+import {
+	BACKUP_DIRECTORY,
+	BACKUP_HOST,
+	BACKUP_PASSWORD,
+	BACKUP_USERNAME,
+	GITLAB_ACCESS_TOKEN,
+	GITLAB_GROUP_ID,
+	GITLAB_URL,
+} from './helpers/environment';
+import { Group } from './models/group';
+import { Repository } from './models/repository';
+
+async function getGroups(groupId: number): Promise<Group[]> {
+	console.log(`Getting group ${groupId}`);
+	const groups: Group[] = [];
+
+	let total;
+	for (let i = 1; total === undefined || groups.length < total; i += 1) {
+		const groupRequest = await axios.get<Group[]>(`https://${GITLAB_URL}/api/v4/groups/${groupId}/subgroups?per_page=100&page=${i}`, {
+			headers: {
+				'PRIVATE-TOKEN': GITLAB_ACCESS_TOKEN,
+			},
+		});
+		groups.push(...groupRequest.data);
+
+		total = groupRequest.headers['x-total'];
+	}
+
+	const temp = [];
+	for (const group of groups) {
+		const subGroups = await getGroups(group.id);
+		temp.push(...subGroups);
+	}
+	groups.push(...temp);
+
+	return groups;
+}
+
+async function getRepositories(groupId: number): Promise<Repository[]> {
+	console.log(`Getting all repositories in group ${groupId}`);
+	const repositories: any[] = [];
+
+	let total;
+	for (let i = 1; total === undefined || repositories.length < total; i += 1) {
+		const repositoryRequest = await axios.get<Repository[]>(
+			`https://${GITLAB_URL}/api/v4/groups/${groupId}/projects?per_page=100&page=${i}`,
+			{
+				headers: {
+					'PRIVATE-TOKEN': GITLAB_ACCESS_TOKEN,
+				},
+			}
+		);
+		repositories.push(...repositoryRequest.data);
+
+		total = repositoryRequest.headers['x-total'];
+	}
+
+	return repositories;
+}
+
+function parseDate(fileName: string): Date {
+	const date = new Date();
+
+	const components = fileName.split('.')[0].split('_');
+	const dateComponents = components[0].split('-');
+	const timeComponents = components[1].split('-');
+
+	date.setUTCFullYear(Number.parseInt(dateComponents[0], 10));
+	date.setUTCMonth(Number.parseInt(dateComponents[1], 10));
+	date.setUTCDate(Number.parseInt(dateComponents[2], 10));
+	date.setUTCHours(Number.parseInt(timeComponents[0], 10));
+	date.setUTCMinutes(Number.parseInt(timeComponents[1], 10));
+	date.setUTCSeconds(Number.parseInt(timeComponents[2], 10));
+
+	return date;
+}
+
+async function cleanup(sftp: Client): Promise<void> {
+	console.log('Running cleanup');
+	const backups = await sftp.list(BACKUP_DIRECTORY);
+	const now = Date.now();
+
+	const week = 1000 * 60 * 60 * 24 * 7;
+	const exceptions = [
+		...backups.filter((b) => now - parseDate(b.name).getTime() < week),
+		...backups.filter((b, index) => parseDate(b.name).getUTCDay() === 0 && index < 5),
+		...backups.filter((b, index) => parseDate(b.name).getUTCDate() === 1 && index < 12),
+	];
+
+	for (const backup of backups.filter((b) => !exceptions.includes(b))) {
+		await sftp.delete(`${BACKUP_DIRECTORY}/${backup.name}`);
+	}
+	console.log('Cleanup completed');
+}
+
+async function mkdirIfNotExistsSync(path: PathLike): Promise<void> {
+	if (!existsSync(path)) {
+		console.log(`Creating directory(${path})`);
+		mkdirSync(path, { recursive: true });
+	} else {
+		console.log(`Skipping directory(${path})`);
+	}
+}
+
+async function start(): Promise<void> {
+	try {
+		console.log('Start gathering group and repository information.');
+		const groups = await getGroups(Number.parseInt(GITLAB_GROUP_ID, 10));
+		const rootRepositories = await getRepositories(Number.parseInt(GITLAB_GROUP_ID, 10));
+
+		const tmpFolder = dirSync().name;
+
+		console.log('Start cloning repositories.');
+		const git: SimpleGit = simpleGit();
+		for (const repository of rootRepositories) {
+			try {
+				console.log(`Cloning to ${tmpFolder}/${repository.path}`);
+				await git.clone(
+					repository.http_url_to_repo.replace('https://', `https://oauth2:${GITLAB_ACCESS_TOKEN}@`),
+					`${tmpFolder}/${repository.path}`
+				);
+			} catch (error) {
+				console.log(`Failed to clone ${tmpFolder}/${repository.path}`);
+			}
+		}
+
+		for (const group of groups) {
+			const path = `${tmpFolder}/${group.full_path}`;
+			mkdirIfNotExistsSync(path);
+
+			const repositories = await getRepositories(group.id);
+			for (const repository of repositories) {
+				try {
+					console.log(`Cloning ${path}/${repository.path}`);
+					mkdirIfNotExistsSync(`${path}/${repository.path}`);
+					await git.clone(
+						repository.http_url_to_repo.replace('https://', `https://oauth2:${GITLAB_ACCESS_TOKEN}@`),
+						`${path}/${repository.path}`
+					);
+				} catch (e) {
+					console.log(e);
+				}
+			}
+		}
+
+		const sftp = new Client();
+
+		await sftp.connect({
+			host: BACKUP_HOST,
+			port: 22,
+			username: BACKUP_USERNAME,
+			password: BACKUP_PASSWORD,
+		});
+
+		if (!(await sftp.exists(BACKUP_DIRECTORY))) {
+			await sftp.mkdir(BACKUP_DIRECTORY, true);
+		}
+
+		console.log('Start archiving');
+		const archive = archiver('zip', {
+			zlib: { level: 9 },
+		});
+		sftp.put(archive, `${BACKUP_DIRECTORY}/${dayjs().format('YYYY-MM-DD_HH-mm-ss')}_gitlab.zip`).then(async () => {
+			console.log(`${archive.pointer()} total bytes`);
+			console.log('archiver has been finalized and the output file descriptor has closed.');
+			await cleanup(sftp);
+			await sftp.end();
+			exit(0);
+		});
+
+		archive.on('close', async () => {
+			console.log('Data has been drained');
+		});
+		archive.on('warning', (err) => {
+			if (err.code === 'ENOENT') {
+				console.log('warning', err);
+			} else {
+				throw err;
+			}
+		});
+		archive.on('error', (err) => {
+			throw err;
+		});
+
+		archive.directory(tmpFolder, false);
+		await archive.finalize();
+	} catch (e) {
+		console.log(e);
+	}
+}
+
+start();
