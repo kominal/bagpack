@@ -50,7 +50,7 @@ export class MongoDBScheduler implements OnApplicationBootstrap {
 			'30m',
 			'mongodump',
 			'--host',
-			connectionString,
+			`"${connectionString}"`,
 			'--readPreference=secondary',
 			'--archive',
 			'--gzip',
