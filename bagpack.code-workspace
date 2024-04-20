@@ -1,0 +1,61 @@
+{
+	"folders": [
+		{ "name": "Backend Core", "path": "backend-core" },
+		{ "name": "Platform", "path": "platform" },
+		{ "name": "GitHub Actions", "path": ".github/workflows" },
+		{ "name": "Bagpack", "path": "." }
+	],
+	"settings": {
+		"editor.formatOnSave": true,
+		"diffEditor.ignoreTrimWhitespace": false,
+		"editor.quickSuggestions": {
+			"other": true,
+			"comments": false,
+			"strings": false
+		},
+		"debug.console.acceptSuggestionOnEnter": "on",
+		"typescript.tsserver.log": "off",
+		"typescript.preferences.importModuleSpecifier": "relative",
+		"editor.suggestSelection": "first",
+		"editor.detectIndentation": false,
+		"javascript.suggest.enabled": false,
+		"editor.inlineSuggest.enabled": true,
+		"github.copilot.enable": {
+			"*": true,
+			"yaml": true,
+			"plaintext": true,
+			"markdown": true
+		},
+		"[typescript]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode",
+			"editor.codeActionsOnSave": {
+				"source.organizeImports": "explicit"
+			}
+		},
+		"[html]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode"
+		},
+		"[json]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode"
+		},
+		"git.confirmSync": false,
+		"[jsonc]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode"
+		},
+		"[javascript]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode"
+		},
+		"[scss]": {
+			"editor.defaultFormatter": "esbenp.prettier-vscode"
+		}
+	},
+	"extensions": {
+		"recommendations": [
+			"angular.ng-template",
+			"dbaeumer.vscode-eslint",
+			"eamodio.gitlens",
+			"esbenp.prettier-vscode",
+			"yigitfindikli.primeflexsnippets"
+		]
+	}
+}

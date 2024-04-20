@@ -1,0 +1,46 @@
+name: Backend Core
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - production
+    paths:
+      - backend-core/**
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend-core
+    steps:
+      - name: Checkout production
+        uses: actions/checkout@main
+        with:
+          ref: production
+
+      - name: Node
+        uses: actions/setup-node@main
+      - name: Install dependencies
+        run: npm install
+      - name: Build
+        run: npm run build
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/kominal/bagpack/backend-core
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: backend-core
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
