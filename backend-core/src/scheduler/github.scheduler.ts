@@ -8,8 +8,12 @@ import { dirSync } from 'tmp';
 import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
 
 @Injectable()
-export class GitHubScheduler {
+export class GitHubScheduler implements OnApplicationBootstrap {
 	private readonly logger = new Logger(GitHubScheduler.name);
+
+	async onApplicationBootstrap(): Promise<void> {
+		await this.run();
+	}
 
 	@Cron(CronExpression.EVERY_DAY_AT_3AM)
 	public async run(): Promise<void> {

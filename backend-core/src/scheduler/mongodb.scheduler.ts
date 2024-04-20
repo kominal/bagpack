@@ -1,12 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { spawn } from 'child_process';
 import Client from 'ssh2-sftp-client';
 import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
 
 @Injectable()
-export class MongoDBScheduler {
+export class MongoDBScheduler implements OnApplicationBootstrap {
 	private readonly logger = new Logger(MongoDBScheduler.name);
+
+	async onApplicationBootstrap(): Promise<void> {
+		await this.run();
+	}
 
 	@Cron(CronExpression.EVERY_DAY_AT_3AM)
 	public async run(): Promise<void> {
