@@ -45,7 +45,7 @@ export class MongoDBScheduler implements OnApplicationBootstrap {
 	}
 
 	private async createBackup(client: Client, directory: string, connectionString: string): Promise<string> {
-		const { stdout } = spawn('timeout', [
+		const { stdout, stderr } = spawn('timeout', [
 			'--kill-after=5s',
 			'30m',
 			'mongodump',
@@ -55,6 +55,10 @@ export class MongoDBScheduler implements OnApplicationBootstrap {
 			'--archive',
 			'--gzip',
 		]);
+
+		stderr.on('data', (data) => {
+			this.logger.error(data.toString());
+		});
 
 		return client.put(stdout, `${directory}/${generateFileName('archive.gz')}`);
 	}
