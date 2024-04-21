@@ -24,7 +24,7 @@ export class AppModule implements OnApplicationBootstrap {
 	) {}
 
 	async onApplicationBootstrap(): Promise<void> {
-		await this.gitHubScheduler.onApplicationBootstrap();
-		await this.mongoDBScheduler.onApplicationBootstrap();
+		await this.gitHubScheduler.run();
+		await this.mongoDBScheduler.run();
 	}
 }
