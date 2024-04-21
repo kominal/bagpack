@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import archiver from 'archiver';
 import { Octokit } from 'octokit';
@@ -8,12 +8,8 @@ import { dirSync } from 'tmp';
 import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
 
 @Injectable()
-export class GitHubScheduler implements OnApplicationBootstrap {
+export class GitHubScheduler {
 	private readonly logger = new Logger(GitHubScheduler.name);
-
-	async onApplicationBootstrap(): Promise<void> {
-		await this.run();
-	}
 
 	@Cron(CronExpression.EVERY_DAY_AT_2AM)
 	public async run(): Promise<void> {
@@ -71,7 +67,24 @@ export class GitHubScheduler implements OnApplicationBootstrap {
 				zlib: { level: 9 },
 			});
 
-			client.put(archive, `${directory}/${generateFileName('zip')}`);
+			client.put(archive, `${directory}/${generateFileName('zip')}`).then(async () => {
+				console.log(`${archive.pointer()} total bytes`);
+				console.log('archiver has been finalized and the output file descriptor has closed.');
+			});
+
+			archive.on('close', async () => {
+				console.log('Data has been drained');
+			});
+			archive.on('warning', (err) => {
+				if (err.code === 'ENOENT') {
+					console.log('warning', err);
+				} else {
+					throw err;
+				}
+			});
+			archive.on('error', (err) => {
+				throw err;
+			});
 
 			archive.directory(tmpDir.name, false);
 			await archive.finalize();

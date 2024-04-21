@@ -1,5 +1,5 @@
 import { MailerModule } from '@nestjs-modules/mailer';
-import { Module } from '@nestjs/common';
+import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { GitHubScheduler } from './scheduler/github.scheduler';
@@ -17,4 +17,14 @@ export const moduleDefinition = {
 };
 
 @Module(moduleDefinition)
-export class AppModule {}
+export class AppModule implements OnApplicationBootstrap {
+	public constructor(
+		private readonly gitHubScheduler: GitHubScheduler,
+		private readonly mongoDBScheduler: MongoDBScheduler
+	) {}
+
+	async onApplicationBootstrap(): Promise<void> {
+		await this.gitHubScheduler.onApplicationBootstrap();
+		await this.mongoDBScheduler.onApplicationBootstrap();
+	}
+}
