@@ -57,7 +57,7 @@ export class GitHubScheduler implements OnApplicationBootstrap {
 			},
 		});
 
-		const tmpDir = dirSync();
+		const tmpDir = dirSync({ unsafeCleanup: true });
 		try {
 			const git = simpleGit();
 
@@ -71,12 +71,10 @@ export class GitHubScheduler implements OnApplicationBootstrap {
 				zlib: { level: 9 },
 			});
 
-			const result = client.put(archive, `${directory}/${generateFileName('zip')}`);
-
 			archive.directory(tmpDir.name, false);
-			await archive.finalize();
+			archive.finalize();
 
-			return result;
+			return client.put(archive, `${directory}/${generateFileName('zip')}`);
 		} finally {
 			tmpDir.removeCallback();
 		}
