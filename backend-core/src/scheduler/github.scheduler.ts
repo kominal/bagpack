@@ -64,7 +64,7 @@ export class GitHubScheduler implements OnApplicationBootstrap {
 			for (const repository of repositories.data) {
 				this.logger.log(`Cloning repository ${repository.name}...`);
 
-				await git.clone(repository.git_url.replace('https://', `https://${username}:${password}@`), `${tmpDir.name}/${repository.name}`);
+				await git.clone(repository.clone_url.replace('https://', `https://${username}:${password}@`), `${tmpDir.name}/${repository.name}`);
 			}
 
 			const archive = archiver('zip', {
