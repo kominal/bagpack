@@ -15,14 +15,14 @@ export class GitHubScheduler implements OnApplicationBootstrap {
 		await this.run();
 	}
 
-	@Cron(CronExpression.EVERY_DAY_AT_3AM)
+	@Cron(CronExpression.EVERY_DAY_AT_2AM)
 	public async run(): Promise<void> {
 		this.logger.log('Running backup process GITHUB...');
 
-		const { GITHUB_ORGANIZATION, GITHUB_USERNAME, GITHUB_PASSWORD } = process.env;
+		const { GITHUB_ORGANIZATION, GITHUB_PASSWORD } = process.env;
 
-		if (!GITHUB_ORGANIZATION || !GITHUB_USERNAME || !GITHUB_PASSWORD) {
-			this.logger.warn('GITHUB_ORGANIZATION, GITHUB_USERNAME or GITHUB_PASSWORD is not set, skipping backup...');
+		if (!GITHUB_ORGANIZATION || !GITHUB_PASSWORD) {
+			this.logger.warn('GITHUB_ORGANIZATION or GITHUB_PASSWORD is not set, skipping backup...');
 			return;
 		}
 
@@ -36,7 +36,7 @@ export class GitHubScheduler implements OnApplicationBootstrap {
 			this.logger.log('Ensuring directory exists...');
 			await ensureDirectory(client, directory);
 			this.logger.log('Creating new backup...');
-			await this.createBackup(client, directory, GITHUB_ORGANIZATION, GITHUB_USERNAME, GITHUB_PASSWORD);
+			await this.createBackup(client, directory, GITHUB_ORGANIZATION, GITHUB_PASSWORD);
 			this.logger.log('Cleanup up previous backups...');
 			await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
@@ -47,7 +47,7 @@ export class GitHubScheduler implements OnApplicationBootstrap {
 		}
 	}
 
-	private async createBackup(client: Client, directory: string, organization: string, username: string, password: string): Promise<string> {
+	private async createBackup(client: Client, directory: string, organization: string, password: string): Promise<void> {
 		const octokit = new Octokit({ auth: password });
 
 		const repositories = await octokit.request('GET /orgs/{org}/repos', {
@@ -64,17 +64,17 @@ export class GitHubScheduler implements OnApplicationBootstrap {
 			for (const repository of repositories.data) {
 				this.logger.log(`Cloning repository ${repository.name}...`);
 
-				await git.clone(repository.clone_url.replace('https://', `https://${username}:${password}@`), `${tmpDir.name}/${repository.name}`);
+				await git.clone(repository.clone_url.replace('https://', `https://${password}@`), `${tmpDir.name}/${repository.name}`);
 			}
 
 			const archive = archiver('zip', {
 				zlib: { level: 9 },
 			});
 
-			archive.directory(tmpDir.name, false);
-			archive.finalize();
+			client.put(archive, `${directory}/${generateFileName('zip')}`);
 
-			return client.put(archive, `${directory}/${generateFileName('zip')}`);
+			archive.directory(tmpDir.name, false);
+			await archive.finalize();
 		} finally {
 			tmpDir.removeCallback();
 		}
