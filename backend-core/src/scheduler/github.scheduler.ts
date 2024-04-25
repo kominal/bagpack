@@ -91,6 +91,7 @@ export class GitHubScheduler {
 
 			archive.directory(tmpDir.name, false);
 			await archive.finalize();
+			archive.end();
 
 			this.logger.log('Archive created successfully');
 		} finally {
