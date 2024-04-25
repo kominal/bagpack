@@ -87,6 +87,17 @@ export class GitHubScheduler {
 				throw err;
 			});
 
+			let readBytes = 0;
+
+			archive.on('data', (chunk) => {
+				console.log(`Received ${chunk.length} bytes of data.`);
+				readBytes += chunk.length;
+			});
+
+			archive.on('end', () => {
+				console.log('All done.');
+			});
+
 			archive.pipe(output);
 
 			archive.directory(tmpDir.name, false);
