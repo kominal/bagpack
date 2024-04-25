@@ -69,8 +69,12 @@ export class GitHubScheduler {
 
 			const output = client.createWriteStream(`${directory}/${generateFileName('zip')}`);
 
+			output.on('end', () => {
+				this.logger.log('Output closed successfully');
+			});
+
 			archive.on('close', () => {
-				console.log('Data has been drained');
+				this.logger.log('Archive closed successfully');
 			});
 			archive.on('warning', (err) => {
 				if (err.code === 'ENOENT') {
@@ -87,6 +91,8 @@ export class GitHubScheduler {
 
 			archive.directory(tmpDir.name, false);
 			await archive.finalize();
+
+			this.logger.log('Archive created successfully');
 		} finally {
 			tmpDir.removeCallback();
 		}
