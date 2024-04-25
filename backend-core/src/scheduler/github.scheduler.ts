@@ -67,12 +67,9 @@ export class GitHubScheduler {
 				zlib: { level: 9 },
 			});
 
-			client.put(archive, `${directory}/${generateFileName('zip')}`).then(async () => {
-				console.log(`${archive.pointer()} total bytes`);
-				console.log('archiver has been finalized and the output file descriptor has closed.');
-			});
+			const output = client.createWriteStream(`${directory}/${generateFileName('zip')}`);
 
-			archive.on('close', async () => {
+			archive.on('close', () => {
 				console.log('Data has been drained');
 			});
 			archive.on('warning', (err) => {
@@ -85,6 +82,8 @@ export class GitHubScheduler {
 			archive.on('error', (err) => {
 				throw err;
 			});
+
+			archive.pipe(output);
 
 			archive.directory(tmpDir.name, false);
 			await archive.finalize();
