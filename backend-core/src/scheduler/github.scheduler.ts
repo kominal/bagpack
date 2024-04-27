@@ -102,9 +102,9 @@ export class GitHubScheduler {
 			archive.directory(tmpDir.name, false);
 
 			archive.finalize();
-			archive.end();
 
 			await pipeline(archive, output);
+			output.end();
 
 			this.logger.log('Archive created successfully');
 		} finally {
