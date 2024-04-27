@@ -4,6 +4,7 @@ import archiver from 'archiver';
 import { Octokit } from 'octokit';
 import simpleGit from 'simple-git';
 import Client from 'ssh2-sftp-client';
+import { pipeline } from 'stream/promises';
 import { dirSync } from 'tmp';
 import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
 
@@ -95,14 +96,15 @@ export class GitHubScheduler {
 			});
 
 			archive.on('end', () => {
-				console.log('All done.');
+				console.log('All done: ' + readBytes + ' bytes read.');
 			});
 
-			archive.pipe(output);
-
 			archive.directory(tmpDir.name, false);
-			await archive.finalize();
+
+			archive.finalize();
 			archive.end();
+
+			await pipeline(archive, output);
 
 			this.logger.log('Archive created successfully');
 		} finally {
