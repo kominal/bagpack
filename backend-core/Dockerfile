@@ -1,7 +1,5 @@
-FROM mongo:latest
-RUN apt update && apt install -y curl git
-RUN curl -sL https://deb.nodesource.com/setup_20.x | bash -
-RUN apt-get install -y nodejs
+FROM node:18-alpine
+RUN apt update && apt install -y curl git mongodb mongodb-tools
 WORKDIR /usr/src/app/
 ENV NODE_ENV production
 COPY package.json /usr/src/app/

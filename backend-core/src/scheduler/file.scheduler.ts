@@ -1,29 +1,26 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import archiver from 'archiver';
-import { Octokit } from 'octokit';
-import simpleGit from 'simple-git';
 import Client from 'ssh2-sftp-client';
 import { pipeline } from 'stream/promises';
-import { dirSync } from 'tmp';
 import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
 
 @Injectable()
-export class GitHubScheduler {
-	private readonly logger = new Logger(GitHubScheduler.name);
+export class FileScheduler {
+	private readonly logger = new Logger(FileScheduler.name);
 
-	@Cron(CronExpression.EVERY_DAY_AT_2AM)
+	@Cron(CronExpression.EVERY_DAY_AT_5AM)
 	public async run(): Promise<void> {
-		this.logger.log('Running backup process GITHUB...');
+		this.logger.log('Running backup process FILE...');
 
-		const { GITHUB_ORGANIZATION, GITHUB_PASSWORD } = process.env;
+		const { FILE_PATHS, GITHUB_PASSWORD } = process.env;
 
-		if (!GITHUB_ORGANIZATION || !GITHUB_PASSWORD) {
-			this.logger.warn('GITHUB_ORGANIZATION or GITHUB_PASSWORD is not set, skipping backup...');
+		if (!FILE_PATHS) {
+			this.logger.warn('FILE_PATHS is not set, skipping backup...');
 			return;
 		}
 
-		const directory = `${process.env.TARGET_DIRECTORY}/github`;
+		const directory = `${process.env.TARGET_DIRECTORY}/file`;
 
 		const client = new Client();
 
@@ -33,7 +30,7 @@ export class GitHubScheduler {
 			this.logger.log('Ensuring directory exists...');
 			await ensureDirectory(client, directory);
 			this.logger.log('Creating new backup...');
-			await this.createBackup(client, directory, GITHUB_ORGANIZATION, GITHUB_PASSWORD);
+			await this.createBackup(client, directory, FILE_PATHS);
 			this.logger.log('Cleanup up previous backups...');
 			await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
@@ -44,26 +41,8 @@ export class GitHubScheduler {
 		}
 	}
 
-	private async createBackup(client: Client, directory: string, organization: string, password: string): Promise<void> {
-		const octokit = new Octokit({ auth: password });
-
-		const repositories = await octokit.request('GET /orgs/{org}/repos', {
-			org: organization,
-			headers: {
-				'X-GitHub-Api-Version': '2022-11-28',
-			},
-		});
-
-		const tmpDir = dirSync({ unsafeCleanup: true });
+	private async createBackup(client: Client, directory: string, paths: string): Promise<void> {
 		try {
-			const git = simpleGit();
-
-			for (const repository of repositories.data) {
-				this.logger.log(`Cloning repository ${repository.name}...`);
-
-				await git.clone(repository.clone_url.replace('https://', `https://${password}@`), `${tmpDir.name}/${repository.name}`);
-			}
-
 			const archive = archiver('zip', {
 				zlib: { level: 9 },
 			});
@@ -81,7 +60,11 @@ export class GitHubScheduler {
 				throw err;
 			});
 
-			archive.directory(tmpDir.name, false);
+			for (const filePath of paths.split(',')) {
+				const [name, path] = filePath.split(':');
+				archive.directory(path, name);
+			}
+
 			archive.finalize();
 
 			await pipeline(archive, output);
