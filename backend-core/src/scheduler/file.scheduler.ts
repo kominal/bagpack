@@ -13,7 +13,7 @@ export class FileScheduler {
 	public async run(): Promise<void> {
 		this.logger.log('Running backup process FILE...');
 
-		const { FILE_PATHS, GITHUB_PASSWORD } = process.env;
+		const { FILE_PATHS } = process.env;
 
 		if (!FILE_PATHS) {
 			this.logger.warn('FILE_PATHS is not set, skipping backup...');
@@ -42,38 +42,34 @@ export class FileScheduler {
 	}
 
 	private async createBackup(client: Client, directory: string, paths: string): Promise<void> {
-		try {
-			const archive = archiver('zip', {
-				zlib: { level: 9 },
-			});
+		const archive = archiver('zip', {
+			zlib: { level: 9 },
+		});
 
-			const output = client.createWriteStream(`${directory}/${generateFileName('zip')}`);
+		const output = client.createWriteStream(`${directory}/${generateFileName('zip')}`);
 
-			archive.on('warning', (err) => {
-				if (err.code === 'ENOENT') {
-					console.log('warning', err);
-				} else {
-					throw err;
-				}
-			});
-			archive.on('error', (err) => {
+		archive.on('warning', (err) => {
+			if (err.code === 'ENOENT') {
+				console.log('warning', err);
+			} else {
 				throw err;
-			});
-
-			for (const filePath of paths.split(',')) {
-				const [name, path] = filePath.split(':');
-				archive.directory(path, name);
 			}
+		});
+		archive.on('error', (err) => {
+			throw err;
+		});
 
-			archive.finalize();
-
-			await pipeline(archive, output);
-
-			output.end();
-
-			this.logger.log('Archive created successfully');
-		} finally {
-			tmpDir.removeCallback();
+		for (const filePath of paths.split(',')) {
+			const [name, path] = filePath.split(':');
+			archive.directory(path, name);
 		}
+
+		archive.finalize();
+
+		await pipeline(archive, output);
+
+		output.end();
+
+		this.logger.log('Archive created successfully');
 	}
 }
