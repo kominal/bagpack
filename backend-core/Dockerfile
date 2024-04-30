@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:18-slim
 RUN apt update && apt install -y curl git mongodb mongodb-tools
 WORKDIR /usr/src/app/
 ENV NODE_ENV production
