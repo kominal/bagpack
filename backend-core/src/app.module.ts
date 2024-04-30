@@ -14,7 +14,7 @@ export const moduleDefinition = {
 		}),
 		ScheduleModule.forRoot(),
 	],
-	providers: [MongoDBScheduler, GitHubScheduler],
+	providers: [MongoDBScheduler, GitHubScheduler, FileScheduler],
 };
 
 @Module(moduleDefinition)
