@@ -22,7 +22,7 @@ export class GitLabScheduler {
 		const { GITLAB_URL, GITLAB_GROUP_ID, GITLAB_ACCESS_TOKEN } = process.env;
 
 		if (!GITLAB_URL || !GITLAB_GROUP_ID || !GITLAB_ACCESS_TOKEN) {
-			this.logger.warn('GITLAB_URL, GITLAB_ACCESS_TOKEN or GITLAB_GROUP_ID is not set, skipping backup...');
+			this.logger.warn('GITLAB_URL, GITLAB_GROUP_ID or GITLAB_ACCESS_TOKEN is not set, skipping backup...');
 			return;
 		}
 
@@ -48,8 +48,8 @@ export class GitLabScheduler {
 	}
 
 	private async createBackup(client: Client, directory: string, url: string, groupId: string, accessToken: string): Promise<void> {
-		const groups = await this.getGroups(url, Number.parseInt(groupId, 10), accessToken);
-		const rootRepositories = await this.getRepositories(url, Number.parseInt(groupId, 10), accessToken);
+		const groups = await this.getGroups(url, groupId, accessToken);
+		const rootRepositories = await this.getRepositories(url, groupId, accessToken);
 
 		const tmpDir = dirSync({ unsafeCleanup: true });
 
@@ -117,10 +117,10 @@ export class GitLabScheduler {
 		}
 	}
 
-	private async getGroups(url: string, groupId: number, accessToken: string): Promise<any[]> {
+	private async getGroups(url: string, groupId: string, accessToken: string): Promise<any[]> {
 		const groups: any[] = [];
 
-		let total = 0;
+		let total: number | undefined;
 		for (let i = 1; total === undefined || groups.length < total; i += 1) {
 			const groupRequest = await axios.get<any[]>(`https://${url}/api/v4/groups/${groupId}/subgroups?per_page=100&page=${i}`, {
 				headers: { 'PRIVATE-TOKEN': accessToken },
@@ -140,10 +140,10 @@ export class GitLabScheduler {
 		return groups;
 	}
 
-	private async getRepositories(url: string, groupId: number, accessToken: string): Promise<any[]> {
+	private async getRepositories(url: string, groupId: string, accessToken: string): Promise<any[]> {
 		const repositories: any[] = [];
 
-		let total = 0;
+		let total: number | undefined;
 		for (let i = 1; total === undefined || repositories.length < total; i += 1) {
 			const repositoryRequest = await axios.get<any[]>(`https://${url}/api/v4/groups/${groupId}/projects?per_page=100&page=${i}`, {
 				headers: { 'PRIVATE-TOKEN': accessToken },
