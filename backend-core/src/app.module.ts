@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { FileScheduler } from './scheduler/file.scheduler';
 import { GitHubScheduler } from './scheduler/github.scheduler';
+import { GitLabScheduler } from './scheduler/gitlab.scheduler';
 import { MongoDBScheduler } from './scheduler/mongodb.scheduler';
 
 export const moduleDefinition = {
@@ -14,18 +15,20 @@ export const moduleDefinition = {
 		}),
 		ScheduleModule.forRoot(),
 	],
-	providers: [MongoDBScheduler, GitHubScheduler, FileScheduler],
+	providers: [GitLabScheduler, MongoDBScheduler, GitHubScheduler, FileScheduler],
 };
 
 @Module(moduleDefinition)
 export class AppModule implements OnApplicationBootstrap {
 	public constructor(
+		private readonly gitLabScheduler: GitLabScheduler,
 		private readonly gitHubScheduler: GitHubScheduler,
 		private readonly mongoDBScheduler: MongoDBScheduler,
 		private readonly fileScheduler: FileScheduler
 	) {}
 
 	async onApplicationBootstrap(): Promise<void> {
+		await this.gitLabScheduler.run();
 		await this.gitHubScheduler.run();
 		await this.mongoDBScheduler.run();
 		await this.fileScheduler.run();
