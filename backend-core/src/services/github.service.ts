@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import archiver from 'archiver';
 import { Octokit } from 'octokit';
 import simpleGit from 'simple-git';
@@ -9,10 +8,9 @@ import { dirSync } from 'tmp';
 import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
 
 @Injectable()
-export class GitHubScheduler {
-	private readonly logger = new Logger(GitHubScheduler.name);
+export class GitHubService {
+	private readonly logger = new Logger(GitHubService.name);
 
-	@Cron(CronExpression.EVERY_DAY_AT_2AM)
 	public async run(): Promise<void> {
 		this.logger.log('Running backup process GITHUB...');
 

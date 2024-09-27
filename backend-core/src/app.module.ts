@@ -2,10 +2,12 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
-import { FileScheduler } from './scheduler/file.scheduler';
-import { GitHubScheduler } from './scheduler/github.scheduler';
-import { GitLabScheduler } from './scheduler/gitlab.scheduler';
-import { MongoDBScheduler } from './scheduler/mongodb.scheduler';
+import { BackupScheduler } from './scheduler/backup.scheduler';
+import { FileService } from './services/file.service';
+import { GitHubService } from './services/github.service';
+import { GitLabService } from './services/gitlab.service';
+import { MongoDBService } from './services/mongodb.service';
+import { RsyncService } from './services/rsync.service';
 
 export const moduleDefinition = {
 	imports: [
@@ -15,22 +17,14 @@ export const moduleDefinition = {
 		}),
 		ScheduleModule.forRoot(),
 	],
-	providers: [GitLabScheduler, MongoDBScheduler, GitHubScheduler, FileScheduler],
+	providers: [BackupScheduler, FileService, GitHubService, GitLabService, MongoDBService, RsyncService],
 };
 
 @Module(moduleDefinition)
 export class AppModule implements OnApplicationBootstrap {
-	public constructor(
-		private readonly gitLabScheduler: GitLabScheduler,
-		private readonly gitHubScheduler: GitHubScheduler,
-		private readonly mongoDBScheduler: MongoDBScheduler,
-		private readonly fileScheduler: FileScheduler
-	) {}
+	public constructor(private readonly backupScheduler: BackupScheduler) {}
 
 	async onApplicationBootstrap(): Promise<void> {
-		await this.gitLabScheduler.run();
-		await this.gitHubScheduler.run();
-		await this.mongoDBScheduler.run();
-		await this.fileScheduler.run();
+		await this.backupScheduler.run();
 	}
 }

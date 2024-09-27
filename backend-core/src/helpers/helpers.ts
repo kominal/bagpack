@@ -7,12 +7,23 @@ extend(customParseFormat);
 
 const DATE_FORMAT = 'YYYY-MM-DD_HH-mm-ss';
 
-export async function connectToTarget(client: Client): Promise<void> {
+export function getTargetCredentials() {
 	const { TARGET_CONNECTION_STRING } = process.env;
 
 	const [TARGET_ACCESS_CONTROL, TARGET_URI] = TARGET_CONNECTION_STRING.split('@');
 	const [TARGET_USERNAME, TARGET_PASSWORD] = TARGET_ACCESS_CONTROL.split(':');
 	const [TARGET_HOST, TARGET_PORT] = TARGET_URI.split(':');
+
+	return {
+		TARGET_USERNAME,
+		TARGET_PASSWORD,
+		TARGET_HOST,
+		TARGET_PORT,
+	};
+}
+
+export async function connectToTarget(client: Client): Promise<void> {
+	const { TARGET_HOST, TARGET_PORT, TARGET_USERNAME, TARGET_PASSWORD } = getTargetCredentials();
 
 	await client.connect({
 		host: TARGET_HOST,

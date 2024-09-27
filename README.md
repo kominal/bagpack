@@ -14,3 +14,13 @@ MAIL_CONNECTION_STRING - The connection string to the mail server
 ### MongoDB
 
 MONGODB_CONNECTION_STRING - MongoDB connection string
+
+#### Restore
+
+To restore a MongoDB backup, you can use the following command:
+
+```bash
+docker run -p 27017:27017 -v ${PWD}/:/backup --rm --name mongodb mongo:latest
+docker exec -it mongodb bash
+mongorestore --gzip --archive=/backup/<backup-file>
+```

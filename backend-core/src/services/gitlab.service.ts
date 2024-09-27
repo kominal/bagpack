@@ -6,16 +6,14 @@ import Client from 'ssh2-sftp-client';
 import { dirSync } from 'tmp';
 
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import axios from 'axios';
 import { pipeline } from 'stream/promises';
 import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
 
 @Injectable()
-export class GitLabScheduler {
-	private readonly logger = new Logger(GitLabScheduler.name);
+export class GitLabService {
+	private readonly logger = new Logger(GitLabService.name);
 
-	@Cron(CronExpression.EVERY_DAY_AT_1AM)
 	public async run(): Promise<void> {
 		this.logger.log('Running backup process GITLAB...');
 

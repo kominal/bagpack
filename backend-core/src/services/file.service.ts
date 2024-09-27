@@ -1,15 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import archiver from 'archiver';
 import Client from 'ssh2-sftp-client';
 import { pipeline } from 'stream/promises';
 import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
 
 @Injectable()
-export class FileScheduler {
-	private readonly logger = new Logger(FileScheduler.name);
+export class FileService {
+	private readonly logger = new Logger(FileService.name);
 
-	@Cron(CronExpression.EVERY_DAY_AT_5AM)
 	public async run(): Promise<void> {
 		this.logger.log('Running backup process FILE...');
 
