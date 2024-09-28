@@ -20,6 +20,7 @@ export class BackupScheduler {
 
 	@Cron(CronExpression.EVERY_DAY_AT_2AM)
 	public async run(): Promise<void> {
+		const time = new Date().getTime();
 		this.logger.log('Running backup process...');
 
 		await this.fileService.run();
@@ -27,5 +28,7 @@ export class BackupScheduler {
 		await this.gitLabService.run();
 		await this.mongoDBService.run();
 		await this.rsyncService.run();
+
+		this.logger.log(`Process completed in ${new Date().getTime() - time}ms`);
 	}
 }
