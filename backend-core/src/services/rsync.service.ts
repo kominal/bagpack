@@ -45,7 +45,9 @@ export class RsyncService {
 			const [name, path] = filePath.split(':');
 			const targetPath = `${directory}/${name}`;
 			await ensureDirectory(client, targetPath);
-			execSync(`sshpass -p '${TARGET_PASSWORD}' rsync -az ${path} ${TARGET_USERNAME}@${TARGET_HOST}:${targetPath}`);
+			execSync(
+				`sshpass -p '${TARGET_PASSWORD}' rsync -e "ssh -o StrictHostKeyChecking=no" -az ${path} ${TARGET_USERNAME}@${TARGET_HOST}:${targetPath}`
+			);
 		}
 	}
 }
