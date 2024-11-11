@@ -49,7 +49,7 @@ function parseDate(fileName: string): Date {
 }
 
 export async function cleanupDirectory(client: Client, directory: string): Promise<void> {
-	const files = await client.list(directory);
+	const files = (await client.list(directory)).filter((f) => f.type === '-');
 	const now = Date.now();
 
 	const week = 1000 * 60 * 60 * 24 * 7;
