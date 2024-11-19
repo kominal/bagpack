@@ -49,7 +49,7 @@ export class RsyncService {
 				`sshpass -p '${TARGET_PASSWORD}' rsync -e "ssh -o StrictHostKeyChecking=no" -az ${path} ${TARGET_USERNAME}@${TARGET_HOST}:${targetSyncPath}`
 			);
 			execSync(
-				`sshpass -p '${TARGET_PASSWORD}' ssh ${TARGET_USERNAME}@${TARGET_HOST} "zip -r ${targetSyncPath} ${targetPath}/${generateFileName('zip')}"`
+				`sshpass -p '${TARGET_PASSWORD}' ssh ${TARGET_USERNAME}@${TARGET_HOST} "zip -r ${targetPath}/${generateFileName('zip')} ${targetSyncPath}"`
 			);
 			this.logger.log('Cleanup up previous backups...');
 			await cleanupDirectory(client, targetPath);
