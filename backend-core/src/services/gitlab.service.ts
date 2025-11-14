@@ -9,12 +9,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { pipeline } from 'stream/promises';
 import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
+import { Result } from '../helpers/result';
 
 @Injectable()
 export class GitLabService {
 	private readonly logger = new Logger(GitLabService.name);
 
-	public async run(): Promise<void> {
+	public async run(): Promise<Result | undefined> {
 		this.logger.log('Running backup process GITLAB...');
 
 		const { GITLAB_URL, GITLAB_GROUP_ID, GITLAB_ACCESS_TOKEN } = process.env;
@@ -38,6 +39,8 @@ export class GitLabService {
 			this.logger.log('Cleanup up previous backups...');
 			await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
+
+			return { success: true };
 		} catch (error) {
 			this.logger.error(error);
 		} finally {

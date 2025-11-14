@@ -3,19 +3,20 @@ import archiver from 'archiver';
 import Client from 'ssh2-sftp-client';
 import { pipeline } from 'stream/promises';
 import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
+import { Result } from '../helpers/result';
 
 @Injectable()
 export class FileService {
 	private readonly logger = new Logger(FileService.name);
 
-	public async run(): Promise<void> {
+	public async run(): Promise<Result | undefined> {
 		this.logger.log('Running backup process FILE...');
 
 		const { FILE_PATHS } = process.env;
 
 		if (!FILE_PATHS) {
 			this.logger.warn('FILE_PATHS is not set, skipping backup...');
-			return;
+			return undefined;
 		}
 
 		const directory = `${process.env.TARGET_DIRECTORY}/file`;
@@ -32,6 +33,8 @@ export class FileService {
 			this.logger.log('Cleanup up previous backups...');
 			await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
+
+			return { success: true };
 		} catch (error) {
 			this.logger.error(error);
 		} finally {

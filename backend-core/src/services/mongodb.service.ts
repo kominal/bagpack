@@ -2,19 +2,20 @@ import { Injectable, Logger } from '@nestjs/common';
 import { spawn } from 'child_process';
 import Client from 'ssh2-sftp-client';
 import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
+import { Result } from '../helpers/result';
 
 @Injectable()
 export class MongoDBService {
 	private readonly logger = new Logger(MongoDBService.name);
 
-	public async run(): Promise<void> {
+	public async run(): Promise<Result | undefined> {
 		this.logger.log('Running backup process MONGODB...');
 
 		const { MONGODB_CONNECTION_STRING } = process.env;
 
 		if (!MONGODB_CONNECTION_STRING) {
 			this.logger.warn('MONGODB_CONNECTION_STRING is not set, skipping backup...');
-			return;
+			return undefined;
 		}
 
 		const directory = `${process.env.TARGET_DIRECTORY}/mongodb`;
@@ -31,6 +32,8 @@ export class MongoDBService {
 			this.logger.log('Cleanup up previous backups...');
 			await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
+
+			return { success: true };
 		} catch (error) {
 			this.logger.error(error);
 		} finally {

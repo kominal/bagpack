@@ -6,12 +6,13 @@ import Client from 'ssh2-sftp-client';
 import { pipeline } from 'stream/promises';
 import { dirSync } from 'tmp';
 import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
+import { Result } from '../helpers/result';
 
 @Injectable()
 export class GitHubService {
 	private readonly logger = new Logger(GitHubService.name);
 
-	public async run(): Promise<void> {
+	public async run(): Promise<Result | undefined> {
 		this.logger.log('Running backup process GITHUB...');
 
 		const { GITHUB_ORGANIZATION, GITHUB_PASSWORD } = process.env;
@@ -35,6 +36,8 @@ export class GitHubService {
 			this.logger.log('Cleanup up previous backups...');
 			await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
+
+			return { success: true };
 		} catch (error) {
 			this.logger.error(error);
 		} finally {

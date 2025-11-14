@@ -2,12 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { execSync } from 'child_process';
 import Client from 'ssh2-sftp-client';
 import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName, getTargetCredentials } from '../helpers/helpers';
+import { Result } from '../helpers/result';
 
 @Injectable()
 export class RsyncService {
 	private readonly logger = new Logger(RsyncService.name);
 
-	public async run(): Promise<void> {
+	public async run(): Promise<Result | undefined> {
 		this.logger.log('Running backup process RSYNC...');
 
 		const { RSYNC__PATHS } = process.env;
@@ -29,6 +30,8 @@ export class RsyncService {
 			this.logger.log('Creating new backup...');
 			await this.createBackup(client, directory, RSYNC__PATHS);
 			this.logger.log('Process completed successfully');
+
+			return { success: true };
 		} catch (error) {
 			this.logger.error(error);
 		} finally {

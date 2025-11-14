@@ -6,6 +6,7 @@ import { BackupScheduler } from './scheduler/backup.scheduler';
 import { FileService } from './services/file.service';
 import { GitHubService } from './services/github.service';
 import { GitLabService } from './services/gitlab.service';
+import { MailService } from './services/mail.service';
 import { MongoDBService } from './services/mongodb.service';
 import { RsyncService } from './services/rsync.service';
 
@@ -17,7 +18,7 @@ export const moduleDefinition = {
 		}),
 		ScheduleModule.forRoot(),
 	],
-	providers: [BackupScheduler, FileService, GitHubService, GitLabService, MongoDBService, RsyncService],
+	providers: [BackupScheduler, FileService, GitHubService, GitLabService, MongoDBService, RsyncService, MailService],
 };
 
 @Module(moduleDefinition)
