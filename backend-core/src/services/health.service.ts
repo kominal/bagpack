@@ -13,7 +13,7 @@ export class HealthService {
 		this.logger.log('Loading result...');
 
 		const result = execSync(
-			`sshpass -p '${TARGET_PASSWORD}' ssh ${TARGET_USERNAME}@${TARGET_HOST} "df -P / | awk '/%/ {print 100 - $5 }'"`
+			`sshpass -p '${TARGET_PASSWORD}' ssh ${TARGET_USERNAME}@${TARGET_HOST} "df -P / | awk \'/%/ {print 100 - $5 }\'"`
 		);
 		const diskUsage = parseInt(result.toString().trim(), 10);
 
