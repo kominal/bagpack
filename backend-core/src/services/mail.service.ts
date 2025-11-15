@@ -1,6 +1,7 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable, Logger } from '@nestjs/common';
 import mjml2html from 'mjml';
+import { Health } from '../helpers/health';
 import { Result } from '../helpers/result';
 
 const LOGO =
@@ -12,7 +13,7 @@ export class MailService {
 
 	public constructor(private mailerService: MailerService) {}
 
-	public async sendResultMail(results: Result[]): Promise<void> {
+	public async sendResultMail(results: Result[], health: Health): Promise<void> {
 		this.logger.log('Running mail service...');
 
 		const { MAIL_CONNECTION_STRING, MAIL_RECIPIENTS, MAIL_SENDER } = process.env;
@@ -29,6 +30,23 @@ export class MailService {
         <mj-image width="100px" src="${LOGO}"></mj-image>
         <mj-divider border-color="#2f7774"></mj-divider>        
         <mj-text>${JSON.stringify(results)}</mj-text>
+        <mj-table>
+          <tr style="border-bottom:1px solid #ecedee;text-align:left;padding:15px 0;">
+            <th style="padding: 0 15px 0 0;">Year</th>
+            <th style="padding: 0 15px;">Language</th>
+            <th style="padding: 0 0 0 15px;">Inspired from</th>
+          </tr>
+          <tr>
+            <td style="padding: 0 15px 0 0;">1995</td>
+            <td style="padding: 0 15px;">PHP</td>
+            <td style="padding: 0 0 0 15px;">C, Shell Unix</td>
+          </tr>
+          <tr>
+            <td style="padding: 0 15px 0 0;">1995</td>
+            <td style="padding: 0 15px;">JavaScript</td>
+            <td style="padding: 0 0 0 15px;">Scheme, Self</td>
+          </tr>
+        </mj-table>
       </mj-column>
     </mj-section>
   </mj-body>
@@ -45,6 +63,7 @@ export class MailService {
 						filename: 'logo.png',
 						path: LOGO,
 						cid: 'logo.png',
+						contentDisposition: 'inline',
 					},
 				],
 			});

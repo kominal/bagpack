@@ -4,6 +4,7 @@ import { Result } from '../helpers/result';
 import { FileService } from '../services/file.service';
 import { GitHubService } from '../services/github.service';
 import { GitLabService } from '../services/gitlab.service';
+import { HealthService } from '../services/health.service';
 import { MailService } from '../services/mail.service';
 import { MongoDBService } from '../services/mongodb.service';
 import { RsyncService } from '../services/rsync.service';
@@ -18,7 +19,8 @@ export class BackupScheduler {
 		private readonly gitLabService: GitLabService,
 		private readonly mongoDBService: MongoDBService,
 		private readonly rsyncService: RsyncService,
-		private readonly mailService: MailService
+		private readonly mailService: MailService,
+		private readonly healthService: HealthService
 	) {}
 
 	@Cron(CronExpression.EVERY_DAY_AT_2AM)
@@ -34,8 +36,10 @@ export class BackupScheduler {
 		results.push(await this.mongoDBService.run());
 		results.push(await this.rsyncService.run());
 
+		const health = await this.healthService.run();
+
 		this.logger.log(`Process completed in ${new Date().getTime() - time}ms`);
 
-		await this.mailService.sendResultMail(results.filter(Boolean));
+		await this.mailService.sendResultMail(results.filter(Boolean), health);
 	}
 }
