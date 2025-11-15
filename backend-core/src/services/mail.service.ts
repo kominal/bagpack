@@ -28,8 +28,7 @@ export class MailService {
       <mj-column>
         <mj-image width="100px" src="${LOGO}"></mj-image>
         <mj-divider border-color="#2f7774"></mj-divider>        
-        <mj-text>{{TEXT1}}</mj-text>
-        ${JSON.stringify(results)}
+        <mj-text>${JSON.stringify(results)}</mj-text>
       </mj-column>
     </mj-section>
   </mj-body>
@@ -41,6 +40,13 @@ export class MailService {
 				from: `"Bagpack" <${MAIL_SENDER}>`,
 				subject: 'Bagpack Backup Report',
 				html: mjml2html(template).html,
+				attachments: [
+					{
+						filename: 'logo.png',
+						path: LOGO,
+						cid: 'logo.png',
+					},
+				],
 			});
 		} catch (e) {
 			this.logger.error(e);
