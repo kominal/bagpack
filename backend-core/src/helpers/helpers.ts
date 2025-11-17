@@ -48,8 +48,21 @@ function parseDate(fileName: string): Date {
 	return dayjs(fileName.split('.')[0], DATE_FORMAT).toDate();
 }
 
-export async function cleanupDirectory(client: Client, directory: string): Promise<void> {
-	const files = (await client.list(directory)).filter((f) => f.type === '-');
+export function bytesToSize(bytes: number): string {
+	const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+	if (bytes === 0) return '0 Byte';
+	const i = Math.floor(Math.log(bytes) / Math.log(1024));
+	return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+}
+
+export async function getFileSize(client: Client, path: string): Promise<number> {
+	return client.stat(path).then((stat) => stat.size);
+}
+
+export async function cleanupDirectory(client: Client, directory: string): Promise<number[]> {
+	const files = (await client.list(directory))
+		.filter((f) => f.type === '-')
+		.sort((a, b) => parseDate(b.name).getTime() - parseDate(a.name).getTime());
 	const now = Date.now();
 
 	const week = 1000 * 60 * 60 * 24 * 7;
@@ -62,4 +75,6 @@ export async function cleanupDirectory(client: Client, directory: string): Promi
 	for (const file of files.filter((b) => !exceptions.includes(b))) {
 		await client.delete(`${directory}/${file.name}`);
 	}
+
+	return Promise.all(files.slice(0, 3).map((file) => getFileSize(client, `${directory}/${file.name}`)));
 }

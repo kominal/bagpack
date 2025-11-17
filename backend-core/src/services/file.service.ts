@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import archiver from 'archiver';
 import Client from 'ssh2-sftp-client';
 import { pipeline } from 'stream/promises';
-import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
+import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName, getFileSize } from '../helpers/helpers';
 import { Result } from '../helpers/result';
 
 @Injectable()
@@ -29,12 +29,12 @@ export class FileService {
 			this.logger.log('Ensuring directory exists...');
 			await ensureDirectory(client, directory);
 			this.logger.log('Creating new backup...');
-			await this.createBackup(client, directory, FILE_PATHS);
+			const size = await this.createBackup(client, directory, FILE_PATHS);
 			this.logger.log('Cleanup up previous backups...');
-			await cleanupDirectory(client, directory);
+			const previousSizes = await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
 
-			return { name: 'File', success: true };
+			return { name: 'File', success: true, size, previousSizes };
 		} catch (error) {
 			this.logger.error(error);
 		} finally {
@@ -42,12 +42,14 @@ export class FileService {
 		}
 	}
 
-	private async createBackup(client: Client, directory: string, paths: string): Promise<void> {
+	private async createBackup(client: Client, directory: string, paths: string): Promise<number> {
 		const archive = archiver('zip', {
 			zlib: { level: 9 },
 		});
 
-		const output = client.createWriteStream(`${directory}/${generateFileName('zip')}`);
+		const targetFile = `${directory}/${generateFileName('zip')}`;
+
+		const output = client.createWriteStream(targetFile);
 
 		archive.on('warning', (err) => {
 			if (err.code === 'ENOENT') {
@@ -72,5 +74,7 @@ export class FileService {
 		output.end();
 
 		this.logger.log('Archive created successfully');
+
+		return getFileSize(client, targetFile);
 	}
 }

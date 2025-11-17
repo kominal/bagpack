@@ -34,7 +34,7 @@ export class BackupScheduler {
 		results.push(await this.gitHubService.run());
 		results.push(await this.gitLabService.run());
 		results.push(await this.mongoDBService.run());
-		results.push(await this.rsyncService.run());
+		results.push(...(await this.rsyncService.run()));
 
 		const health = await this.healthService.run();
 

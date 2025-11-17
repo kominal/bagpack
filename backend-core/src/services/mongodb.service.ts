@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { spawn } from 'child_process';
 import Client from 'ssh2-sftp-client';
-import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
+import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName, getFileSize } from '../helpers/helpers';
 import { Result } from '../helpers/result';
 
 @Injectable()
@@ -28,12 +28,12 @@ export class MongoDBService {
 			this.logger.log('Ensuring directory exists...');
 			await ensureDirectory(client, directory);
 			this.logger.log('Creating new backup...');
-			await this.createBackup(client, directory, MONGODB_CONNECTION_STRING);
+			const size = await this.createBackup(client, directory, MONGODB_CONNECTION_STRING);
 			this.logger.log('Cleanup up previous backups...');
-			await cleanupDirectory(client, directory);
+			const previousSizes = await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
 
-			return { name: 'MongoDB', success: true };
+			return { name: 'MongoDB', success: true, size, previousSizes };
 		} catch (error) {
 			this.logger.error(error);
 		} finally {
@@ -41,7 +41,7 @@ export class MongoDBService {
 		}
 	}
 
-	private async createBackup(client: Client, directory: string, connectionString: string): Promise<string> {
+	private async createBackup(client: Client, directory: string, connectionString: string): Promise<number> {
 		const { stdout, stderr } = spawn('timeout', [
 			'--kill-after=5s',
 			'30m',
@@ -57,6 +57,10 @@ export class MongoDBService {
 			this.logger.error(data.toString());
 		});
 
-		return client.put(stdout, `${directory}/${generateFileName('archive.gz')}`);
+		const targetFile = `${directory}/${generateFileName('archive.gz')}`;
+
+		await client.put(stdout, targetFile);
+
+		return getFileSize(client, targetFile);
 	}
 }

@@ -1,14 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { execSync } from 'child_process';
 import Client from 'ssh2-sftp-client';
-import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName, getTargetCredentials } from '../helpers/helpers';
+import {
+	cleanupDirectory,
+	connectToTarget,
+	ensureDirectory,
+	generateFileName,
+	getFileSize,
+	getTargetCredentials,
+} from '../helpers/helpers';
 import { Result } from '../helpers/result';
 
 @Injectable()
 export class RsyncService {
 	private readonly logger = new Logger(RsyncService.name);
 
-	public async run(): Promise<Result | undefined> {
+	public async run(): Promise<Result[] | undefined> {
 		this.logger.log('Running backup process RSYNC...');
 
 		const { RSYNC__PATHS } = process.env;
@@ -28,10 +35,10 @@ export class RsyncService {
 			this.logger.log('Ensuring directory exists...');
 			await ensureDirectory(client, directory);
 			this.logger.log('Creating new backup...');
-			await this.createBackup(client, directory, RSYNC__PATHS);
+			const results = await this.createBackup(client, directory, RSYNC__PATHS);
 			this.logger.log('Process completed successfully');
 
-			return { name: 'Rsync', success: true };
+			return results;
 		} catch (error) {
 			this.logger.error(error);
 		} finally {
@@ -39,8 +46,10 @@ export class RsyncService {
 		}
 	}
 
-	private async createBackup(client: Client, directory: string, paths: string): Promise<void> {
+	private async createBackup(client: Client, directory: string, paths: string): Promise<Result[]> {
 		const { TARGET_HOST, TARGET_USERNAME, TARGET_PASSWORD } = getTargetCredentials();
+
+		const results: Result[] = [];
 
 		for (const filePath of paths.split(',')) {
 			const [name, path] = filePath.split(':');
@@ -53,11 +62,18 @@ export class RsyncService {
 				`sshpass -p '${TARGET_PASSWORD}' rsync -e "ssh -o StrictHostKeyChecking=no" -az ${path} ${TARGET_USERNAME}@${TARGET_HOST}:${targetSyncPath}`
 			);
 			this.logger.log('Zipping result...');
-			execSync(
-				`sshpass -p '${TARGET_PASSWORD}' ssh ${TARGET_USERNAME}@${TARGET_HOST} "zip -qr ${targetPath}/${generateFileName('zip')} ${targetSyncPath}"`
-			);
+
+			const targetFile = `${targetPath}/${generateFileName('zip')}`;
+
+			execSync(`sshpass -p '${TARGET_PASSWORD}' ssh ${TARGET_USERNAME}@${TARGET_HOST} "zip -qr ${targetFile} ${targetSyncPath}"`);
 			this.logger.log('Cleanup up previous backups...');
-			await cleanupDirectory(client, targetPath);
+			const previousSizes = await cleanupDirectory(client, targetPath);
+
+			const size = await getFileSize(client, targetFile);
+
+			results.push({ name: `Rsync - ${name}`, success: true, size, previousSizes });
 		}
+
+		return results;
 	}
 }

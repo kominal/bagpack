@@ -8,7 +8,7 @@ import { dirSync } from 'tmp';
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { pipeline } from 'stream/promises';
-import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
+import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName, getFileSize } from '../helpers/helpers';
 import { Result } from '../helpers/result';
 
 @Injectable()
@@ -35,12 +35,12 @@ export class GitLabService {
 			this.logger.log('Ensuring directory exists...');
 			await ensureDirectory(client, directory);
 			this.logger.log('Creating new backup...');
-			await this.createBackup(client, directory, GITLAB_URL, GITLAB_GROUP_ID, GITLAB_ACCESS_TOKEN);
+			const size = await this.createBackup(client, directory, GITLAB_URL, GITLAB_GROUP_ID, GITLAB_ACCESS_TOKEN);
 			this.logger.log('Cleanup up previous backups...');
-			await cleanupDirectory(client, directory);
+			const previousSizes = await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
 
-			return { name: 'GitLab', success: true };
+			return { name: 'GitLab', success: true, size, previousSizes };
 		} catch (error) {
 			this.logger.error(error);
 		} finally {
@@ -48,7 +48,7 @@ export class GitLabService {
 		}
 	}
 
-	private async createBackup(client: Client, directory: string, url: string, groupId: string, accessToken: string): Promise<void> {
+	private async createBackup(client: Client, directory: string, url: string, groupId: string, accessToken: string): Promise<number> {
 		const groups = await this.getGroups(url, groupId, accessToken);
 		const rootRepositories = await this.getRepositories(url, groupId, accessToken);
 
@@ -88,11 +88,11 @@ export class GitLabService {
 				}
 			}
 
-			const archive = archiver('zip', {
-				zlib: { level: 9 },
-			});
+			const archive = archiver('zip', { zlib: { level: 9 } });
 
-			const output = client.createWriteStream(`${directory}/${generateFileName('zip')}`);
+			const targetFile = `${directory}/${generateFileName('zip')}`;
+
+			const output = client.createWriteStream(targetFile);
 
 			archive.on('warning', (err) => {
 				if (err.code === 'ENOENT') {
@@ -113,6 +113,8 @@ export class GitLabService {
 			output.end();
 
 			this.logger.log('Archive created successfully');
+
+			return getFileSize(client, targetFile);
 		} finally {
 			tmpDir.removeCallback();
 		}

@@ -5,7 +5,7 @@ import simpleGit from 'simple-git';
 import Client from 'ssh2-sftp-client';
 import { pipeline } from 'stream/promises';
 import { dirSync } from 'tmp';
-import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName } from '../helpers/helpers';
+import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName, getFileSize } from '../helpers/helpers';
 import { Result } from '../helpers/result';
 
 @Injectable()
@@ -32,12 +32,12 @@ export class GitHubService {
 			this.logger.log('Ensuring directory exists...');
 			await ensureDirectory(client, directory);
 			this.logger.log('Creating new backup...');
-			await this.createBackup(client, directory, GITHUB_ORGANIZATION, GITHUB_PASSWORD);
+			const size = await this.createBackup(client, directory, GITHUB_ORGANIZATION, GITHUB_PASSWORD);
 			this.logger.log('Cleanup up previous backups...');
-			await cleanupDirectory(client, directory);
+			const previousSizes = await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
 
-			return { name: 'GitHub', success: true };
+			return { name: 'GitHub', success: true, size, previousSizes };
 		} catch (error) {
 			this.logger.error(error);
 		} finally {
@@ -45,7 +45,7 @@ export class GitHubService {
 		}
 	}
 
-	private async createBackup(client: Client, directory: string, organization: string, password: string): Promise<void> {
+	private async createBackup(client: Client, directory: string, organization: string, password: string): Promise<number> {
 		const octokit = new Octokit({ auth: password });
 
 		const repositories = await octokit.request('GET /orgs/{org}/repos', {
@@ -69,7 +69,9 @@ export class GitHubService {
 				zlib: { level: 9 },
 			});
 
-			const output = client.createWriteStream(`${directory}/${generateFileName('zip')}`);
+			const targetFile = `${directory}/${generateFileName('zip')}`;
+
+			const output = client.createWriteStream(targetFile);
 
 			archive.on('warning', (err) => {
 				if (err.code === 'ENOENT') {
@@ -90,6 +92,8 @@ export class GitHubService {
 			output.end();
 
 			this.logger.log('Archive created successfully');
+
+			return getFileSize(client, targetFile);
 		} finally {
 			tmpDir.removeCallback();
 		}
