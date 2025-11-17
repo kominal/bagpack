@@ -31,7 +31,7 @@ export class RsyncService {
 			await this.createBackup(client, directory, RSYNC__PATHS);
 			this.logger.log('Process completed successfully');
 
-			return { success: true };
+			return { name: 'Rsync', success: true };
 		} catch (error) {
 			this.logger.error(error);
 		} finally {

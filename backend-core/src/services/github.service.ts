@@ -37,7 +37,7 @@ export class GitHubService {
 			await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
 
-			return { success: true };
+			return { name: 'GitHub', success: true };
 		} catch (error) {
 			this.logger.error(error);
 		} finally {

@@ -33,7 +33,7 @@ export class MongoDBService {
 			await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
 
-			return { success: true };
+			return { name: 'MongoDB', success: true };
 		} catch (error) {
 			this.logger.error(error);
 		} finally {
