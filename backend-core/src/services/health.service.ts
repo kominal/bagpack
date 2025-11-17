@@ -12,9 +12,16 @@ export class HealthService {
 
 		this.logger.log('Loading result...');
 
+		console.log(
+			`sshpass -p '${TARGET_PASSWORD}' ssh ${TARGET_USERNAME}@${TARGET_HOST} "df -h | grep '/$' | sed -E 's/^[^%]*\s+([0-9]+)%.*$/\\1/'"`
+		);
+
 		const result = execSync(
 			`sshpass -p '${TARGET_PASSWORD}' ssh ${TARGET_USERNAME}@${TARGET_HOST} "df -h | grep '/$' | sed -E 's/^[^%]*\s+([0-9]+)%.*$/\\1/'"`
 		);
+
+		console.log(`Disk usage result: ${result}`);
+
 		const diskUsage = parseInt(result.toString().trim(), 10);
 
 		return { diskUsage };

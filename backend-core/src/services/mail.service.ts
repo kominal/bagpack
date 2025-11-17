@@ -41,7 +41,7 @@ export class MailService {
             <td style="padding: 0 15px 0 0;">${result.name}</td>
             <td style="padding: 0 15px 0 0;">${bytesToSize(result.size)}</td>
             <td style="padding: 0 15px 0 0;">${result.previousSizes.map(bytesToSize).join(', ')}</td>
-            <td style="padding: 0 15px;"><mj-image width="64px" src="cid:error.png"></mj-image></td>
+            <td style="padding: 0 15px;"><img width="64px" src="cid:error.png"></img></td>
             <td style="padding: 0 0 0 15px;">${result.success}</td>
           </tr>
             `);
@@ -59,7 +59,7 @@ export class MailService {
             <td style="padding: 0 15px 0 0; font-weight: bold;">Disk space</td>
             <td style="padding: 0 15px 0 0; font-weight: bold;">-</td>
             <td style="padding: 0 15px 0 0; font-weight: bold;">-</td>
-            <td style="padding: 0 15px; font-weight: bold;"><mj-image width="64px" src="cid:success.png"></mj-image></td>
+            <td style="padding: 0 15px; font-weight: bold;"><img width="64px" src="cid:success.png"></img></td>
             <td style="padding: 0 0 0 15px; font-weight: bold;">${health.diskUsage} %</td>
           </tr>
           ${rows.join('\n')}
@@ -67,7 +67,7 @@ export class MailService {
             <td style="padding: 0 15px 0 0;">Disk space</td>
             <td style="padding: 0 15px 0 0;">-</td>
             <td style="padding: 0 15px 0 0;">-</td>
-            <td style="padding: 0 15px;"><mj-image width="64px" src="cid:success.png"></mj-image></td>
+            <td style="padding: 0 15px;"><img width="64px" src="cid:success.png"></img></td>
             <td style="padding: 0 0 0 15px;">${health.diskUsage} %</td>
           </tr>
         </mj-table>
