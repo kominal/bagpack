@@ -47,12 +47,13 @@ export class MailService {
             `);
 		}
 
-		const template = `<mjml>
+		const template = `<mjml width="1000px">
   <mj-body>
     <mj-section>
       <mj-column>
         <mj-image width="100px" src="cid:logo.png"></mj-image>
-        <mj-divider border-color="#2f7774"></mj-divider>        
+        <mj-text>Bagpack Backup Report</mj-text>
+        <mj-divider border-color="#051b56"></mj-divider>        
         <mj-text>${JSON.stringify(results)}</mj-text>
         <mj-table>
           <tr>
