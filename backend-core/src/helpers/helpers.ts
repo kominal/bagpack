@@ -81,7 +81,13 @@ export async function cleanupDirectory(client: Client, directory: string): Promi
 		...files.filter((f, index) => parseDate(f.name).getUTCDate() === 1 && index < 12),
 	];
 
-	for (const file of files.filter((b) => !exceptions.includes(b))) {
+	for (const file of files.filter((b) => {
+		if (exceptions.includes(b)) {
+			exceptions.splice(exceptions.indexOf(b), 1);
+			return true;
+		}
+		return false;
+	})) {
 		await client.delete(`${directory}/${file.name}`);
 	}
 

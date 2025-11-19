@@ -1,4 +1,5 @@
 import { MailerService } from '@nestjs-modules/mailer';
+import { ISendMailOptions } from '@nestjs-modules/mailer/dist/interfaces/send-mail-options.interface';
 import { Injectable, Logger } from '@nestjs/common';
 import mjml2html from 'mjml';
 import { Health } from '../helpers/health';
@@ -35,14 +36,38 @@ export class MailService {
 
 		const rows: string[] = [];
 
+		let hasError = false;
+		let hasWarning = false;
+		let hasSucess = false;
+
 		for (const result of results) {
+			let icon = 'error.png';
+
+			if (result.success) {
+				icon = 'success.png';
+
+				if (result.previousSizes.length > 0) {
+					const previousSize = result.previousSizes[result.previousSizes.length - 1];
+					if (result.size > previousSize * 1.1) {
+						icon = 'warning.png';
+					}
+				}
+			}
+
+			if (icon === 'error.png') {
+				hasError = true;
+			} else if (icon === 'warning.png') {
+				hasWarning = true;
+			} else {
+				hasSucess = true;
+			}
+
 			rows.push(`
           <tr style="border-bottom:1px solid #e9e9e9;">
             <td style="padding: 0 15px 0 0;">${result.name}</td>
             <td style="padding: 0 15px 0 0;">${bytesToSize(result.size)}</td>
             <td style="padding: 0 15px 0 0;">${result.previousSizes.map(bytesToSize).join(', ')}</td>
-            <td style="padding:20px 5px 20px 10px"><img width="32px" src="cid:error.png"></img></td>
-            <td style="padding: 0 0 0 15px;">${result.success}</td>
+            <td style="padding:20px 5px 20px 10px"><img width="24px" src="cid:${icon}"></img></td>
           </tr>
             `);
 		}
@@ -52,11 +77,10 @@ export class MailService {
     <mj-section>
       <mj-column>
         <mj-image width="100px" src="cid:logo.png"></mj-image>
-        <mj-text>Bagpack Backup Report</mj-text>
+        <mj-text style="font-weight: bold; text-align: center;">Bagpack Backup Report</mj-text>
         <mj-divider border-color="#051b56"></mj-divider>        
-        <mj-text>${JSON.stringify(results)}</mj-text>
         <mj-table>
-          <tr style="border-bottom:1px solid #e9e9e9;">
+          <tr style="border-bottom: 1px solid #e9e9e9; font-weight: bold;">
             <td style="padding: 0 15px 0 0;">Process</td>
             <td style="padding: 0 15px 0 0;">Previous Sizes</td>
             <td style="padding: 0 15px 0 0;">Size</td>
@@ -81,18 +105,25 @@ export class MailService {
   </mj-body>
 </mjml>`;
 
+		const attachments: ISendMailOptions['attachments'] = [];
+
+		if (hasSucess) {
+			attachments.push({ filename: 'success.png', path: SUCCESS, cid: 'success.png', contentDisposition: 'inline' });
+		}
+		if (hasWarning) {
+			attachments.push({ filename: 'warning.png', path: WARNING, cid: 'warning.png', contentDisposition: 'inline' });
+		}
+		if (hasError) {
+			attachments.push({ filename: 'error.png', path: ERROR, cid: 'error.png', contentDisposition: 'inline' });
+		}
+
 		try {
 			await this.mailerService.sendMail({
 				to: MAIL_RECIPIENTS.split(',').map((email) => email.trim()),
 				from: `"Bagpack" <${MAIL_SENDER}>`,
 				subject: 'Bagpack Backup Report',
 				html: mjml2html(template).html,
-				attachments: [
-					{ filename: 'logo.png', path: LOGO, cid: 'logo.png', contentDisposition: 'inline' },
-					{ filename: 'success.png', path: SUCCESS, cid: 'success.png', contentDisposition: 'inline' },
-					{ filename: 'warning.png', path: WARNING, cid: 'warning.png', contentDisposition: 'inline' },
-					{ filename: 'error.png', path: ERROR, cid: 'error.png', contentDisposition: 'inline' },
-				],
+				attachments: [{ filename: 'logo.png', path: LOGO, cid: 'logo.png', contentDisposition: 'inline' }],
 			});
 		} catch (e) {
 			this.logger.error(e);
