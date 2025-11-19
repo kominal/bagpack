@@ -13,7 +13,9 @@ export class HealthService {
 		this.logger.log('Loading result...');
 
 		try {
-			const result = execSync(`ssh ${TARGET_USERNAME}@${TARGET_HOST} "df -h | grep '/$' | sed -E 's/^[^%]*\s+([0-9]+)%.*$/\\1/'"`);
+			const result = execSync(
+				`ssh  -o StrictHostKeyChecking=no ${TARGET_USERNAME}@${TARGET_HOST} "df -h | grep '/$' | sed -E 's/^[^%]*\s+([0-9]+)%.*$/\\1/'"`
+			);
 
 			const diskUsage = parseInt(result.toString().trim(), 10);
 

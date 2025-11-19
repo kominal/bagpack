@@ -27,6 +27,7 @@ export async function connectToTarget(client: Client): Promise<void> {
 		host: TARGET_HOST,
 		port: parseInt(TARGET_PORT || '22', 10),
 		username: TARGET_USERNAME,
+		privateKey: process.env.TARGET_SSH_PRIVATE_KEY,
 	});
 }
 
