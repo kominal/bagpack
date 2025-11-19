@@ -6,6 +6,7 @@ RUN apt update && apt install -y mongodb-org-tools rsync
 WORKDIR /usr/src/app/
 ENV NODE_ENV production
 COPY start.sh /usr/start.sh
+RUN chmod +x /usr/start.sh
 COPY package.json /usr/src/app/
 COPY package-lock.json /usr/src/app/
 COPY dist/ /usr/src/app/
