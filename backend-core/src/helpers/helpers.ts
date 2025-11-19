@@ -82,7 +82,7 @@ export async function cleanupDirectory(client: Client, directory: string): Promi
 	];
 
 	for (const file of files.filter((b) => {
-		if (exceptions.includes(b)) {
+		if (!exceptions.includes(b)) {
 			exceptions.splice(exceptions.indexOf(b), 1);
 			return true;
 		}

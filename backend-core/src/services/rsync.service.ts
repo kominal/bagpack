@@ -53,7 +53,7 @@ export class RsyncService {
 
 				const targetFile = `${targetPath}/${generateFileName('zip')}`;
 
-				execSync(`ssh  -o StrictHostKeyChecking=no ${TARGET_USERNAME}@${TARGET_HOST} "zip -qr ${targetFile} ${targetSyncPath}"`);
+				execSync(`ssh -o StrictHostKeyChecking=no ${TARGET_USERNAME}@${TARGET_HOST} "zip -qr ${targetFile} ${targetSyncPath}"`);
 				this.logger.log('Cleanup up previous backups...');
 				const previousSizes = await cleanupDirectory(client, targetPath);
 
