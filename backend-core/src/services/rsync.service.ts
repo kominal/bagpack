@@ -47,7 +47,7 @@ export class RsyncService {
 	}
 
 	private async createBackup(client: Client, directory: string, paths: string): Promise<Result[]> {
-		const { TARGET_HOST, TARGET_USERNAME, TARGET_PASSWORD } = getTargetCredentials();
+		const { TARGET_HOST, TARGET_USERNAME } = getTargetCredentials();
 
 		const results: Result[] = [];
 
@@ -58,14 +58,12 @@ export class RsyncService {
 			const targetSyncPath = `${targetPath}/sync`;
 			await ensureDirectory(client, targetSyncPath);
 			this.logger.log('Syncing...');
-			execSync(
-				`sshpass -p '${TARGET_PASSWORD}' rsync -e "ssh -o StrictHostKeyChecking=no" -az ${path} ${TARGET_USERNAME}@${TARGET_HOST}:${targetSyncPath}`
-			);
+			execSync(`rsync -e "ssh -o StrictHostKeyChecking=no" -az ${path} ${TARGET_USERNAME}@${TARGET_HOST}:${targetSyncPath}`);
 			this.logger.log('Zipping result...');
 
 			const targetFile = `${targetPath}/${generateFileName('zip')}`;
 
-			execSync(`sshpass -p '${TARGET_PASSWORD}' ssh ${TARGET_USERNAME}@${TARGET_HOST} "zip -qr ${targetFile} ${targetSyncPath}"`);
+			execSync(`ssh ${TARGET_USERNAME}@${TARGET_HOST} "zip -qr ${targetFile} ${targetSyncPath}"`);
 			this.logger.log('Cleanup up previous backups...');
 			const previousSizes = await cleanupDirectory(client, targetPath);
 

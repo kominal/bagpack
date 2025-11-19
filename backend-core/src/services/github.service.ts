@@ -50,9 +50,7 @@ export class GitHubService {
 
 		const repositories = await octokit.request('GET /orgs/{org}/repos', {
 			org: organization,
-			headers: {
-				'X-GitHub-Api-Version': '2022-11-28',
-			},
+			headers: { 'X-GitHub-Api-Version': '2022-11-28' },
 		});
 
 		const tmpDir = dirSync({ unsafeCleanup: true });

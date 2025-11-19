@@ -10,26 +10,23 @@ const DATE_FORMAT = 'YYYY-MM-DD_HH-mm-ss';
 export function getTargetCredentials() {
 	const { TARGET_CONNECTION_STRING } = process.env;
 
-	const [TARGET_ACCESS_CONTROL, TARGET_URI] = TARGET_CONNECTION_STRING.split('@');
-	const [TARGET_USERNAME, TARGET_PASSWORD] = TARGET_ACCESS_CONTROL.split(':');
+	const [TARGET_USERNAME, TARGET_URI] = TARGET_CONNECTION_STRING.split('@');
 	const [TARGET_HOST, TARGET_PORT] = TARGET_URI.split(':');
 
 	return {
 		TARGET_USERNAME,
-		TARGET_PASSWORD,
 		TARGET_HOST,
 		TARGET_PORT,
 	};
 }
 
 export async function connectToTarget(client: Client): Promise<void> {
-	const { TARGET_HOST, TARGET_PORT, TARGET_USERNAME, TARGET_PASSWORD } = getTargetCredentials();
+	const { TARGET_HOST, TARGET_PORT, TARGET_USERNAME } = getTargetCredentials();
 
 	await client.connect({
 		host: TARGET_HOST,
 		port: parseInt(TARGET_PORT || '22', 10),
 		username: TARGET_USERNAME,
-		password: TARGET_PASSWORD,
 	});
 }
 
