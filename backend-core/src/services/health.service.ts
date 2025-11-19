@@ -12,10 +12,14 @@ export class HealthService {
 
 		this.logger.log('Loading result...');
 
-		const result = execSync(`ssh ${TARGET_USERNAME}@${TARGET_HOST} "df -h | grep '/$' | sed -E 's/^[^%]*\s+([0-9]+)%.*$/\\1/'"`);
+		try {
+			const result = execSync(`ssh ${TARGET_USERNAME}@${TARGET_HOST} "df -h | grep '/$' | sed -E 's/^[^%]*\s+([0-9]+)%.*$/\\1/'"`);
 
-		const diskUsage = parseInt(result.toString().trim(), 10);
+			const diskUsage = parseInt(result.toString().trim(), 10);
 
-		return { diskUsage };
+			return { success: true, diskUsage };
+		} catch (e) {
+			return { success: false, diskUsage: -1 };
+		}
 	}
 }
