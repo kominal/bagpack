@@ -37,11 +37,11 @@ export class MailService {
 
 		for (const result of results) {
 			rows.push(`
-          <tr>
+          <tr style="border-bottom:1px solid #e9e9e9;">
             <td style="padding: 0 15px 0 0;">${result.name}</td>
             <td style="padding: 0 15px 0 0;">${bytesToSize(result.size)}</td>
             <td style="padding: 0 15px 0 0;">${result.previousSizes.map(bytesToSize).join(', ')}</td>
-            <td style="padding:20px 5px 20px 10px;border-bottom:1px solid #e9e9e9;"><img src="cid:error.png"></img></td>
+            <td style="padding:20px 5px 20px 10px"><img width="32px" src="cid:error.png"></img></td>
             <td style="padding: 0 0 0 15px;">${result.success}</td>
           </tr>
             `);
@@ -56,15 +56,15 @@ export class MailService {
         <mj-divider border-color="#051b56"></mj-divider>        
         <mj-text>${JSON.stringify(results)}</mj-text>
         <mj-table>
-          <tr>
+          <tr style="border-bottom:1px solid #e9e9e9;">
             <td style="padding: 0 15px 0 0; font-weight: bold;">Disk space</td>
             <td style="padding: 0 15px 0 0; font-weight: bold;">-</td>
             <td style="padding: 0 15px 0 0; font-weight: bold;">-</td>
-            <td style="padding: 0 15px; font-weight: bold;"><img width="64px" src="cid:success.png"></img></td>
+            <td style="padding: 0 15px;"><img width="32px" src="cid:success.png"></img></td>
             <td style="padding: 0 0 0 15px; font-weight: bold;">${health.diskUsage} %</td>
           </tr>
           ${rows.join('\n')}
-          <tr>
+          <tr style="border-bottom:1px solid #e9e9e9;">
             <td style="padding: 0 15px 0 0;">Disk space</td>
             <td style="padding: 0 15px 0 0;">-</td>
             <td style="padding: 0 15px 0 0;">-</td>
