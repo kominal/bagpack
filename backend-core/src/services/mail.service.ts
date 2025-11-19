@@ -41,7 +41,7 @@ export class MailService {
             <td style="padding: 0 15px 0 0;">${result.name}</td>
             <td style="padding: 0 15px 0 0;">${bytesToSize(result.size)}</td>
             <td style="padding: 0 15px 0 0;">${result.previousSizes.map(bytesToSize).join(', ')}</td>
-            <td style="padding: 0 15px;"><img width="64px" src="cid:error.png"></img></td>
+            <td style="padding:20px 5px 20px 10px;border-bottom:1px solid #e9e9e9;"><img src="cid:error.png"></img></td>
             <td style="padding: 0 0 0 15px;">${result.success}</td>
           </tr>
             `);
