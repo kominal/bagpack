@@ -53,6 +53,17 @@ export function bytesToSize(bytes: number): string {
 	return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
 }
 
+export function msToTime(duration: number): string {
+	const seconds = Math.floor((duration / 1000) % 60);
+	const minutes = Math.floor((duration / (1000 * 60)) % 60);
+	const hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
+
+	const hoursStr = hours < 10 ? '0' + hours : hours;
+	const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+	const secondsStr = seconds < 10 ? '0' + seconds : seconds;
+	return hoursStr + ':' + minutesStr + ':' + secondsStr;
+}
+
 export async function getFileSize(client: Client, path: string): Promise<number> {
 	return client.stat(path).then((stat) => stat.size);
 }

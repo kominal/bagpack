@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import Client from 'ssh2-sftp-client';
+import { connectToTarget } from '../helpers/helpers';
 import { Result } from '../helpers/result';
 import { FileService } from '../services/file.service';
 import { GitHubService } from '../services/github.service';
@@ -25,24 +27,41 @@ export class BackupScheduler {
 
 	@Cron(CronExpression.EVERY_DAY_AT_2AM)
 	public async run(): Promise<void> {
-		const time = new Date().getTime();
-		this.logger.log('Running backup process...');
+		const client = new Client();
 
-		const results: (Result | undefined)[] = [];
+		try {
+			const time = new Date().getTime();
+			this.logger.log('Running backup process...');
 
-		results.push(await this.fileService.run());
-		results.push(await this.gitHubService.run());
-		results.push(await this.gitLabService.run());
-		results.push(await this.mongoDBService.run());
-		results.push(...(await this.rsyncService.run()));
+			this.logger.log('Connecting to target...');
+			await connectToTarget(client);
 
-		const health = await this.healthService.run();
+			const results: (Result | undefined)[] = [];
 
-		this.logger.log(`Process completed in ${new Date().getTime() - time}ms`);
+			results.push(await this.fileService.run(client));
+			results.push(await this.gitHubService.run(client));
+			results.push(await this.gitLabService.run(client));
+			results.push(await this.mongoDBService.run(client));
+			results.push(...(await this.rsyncService.run(client)));
 
-		await this.mailService.sendResultMail(
-			results.filter((r): r is Result => !!r),
-			health
-		);
+			const health = await this.healthService.run();
+
+			const duration = new Date().getTime() - time;
+
+			this.logger.log(`Process completed in ${duration}ms`);
+
+			await this.mailService.sendResultMail(
+				results.filter((r): r is Result => !!r),
+				health,
+				duration
+			);
+		} catch (e) {
+			this.logger.error('Error during backup process', e);
+			try {
+				await client.end();
+			} catch (e) {
+				this.logger.error('Error closing SFTP client', e);
+			}
+		}
 	}
 }
