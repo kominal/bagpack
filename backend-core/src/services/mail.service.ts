@@ -2,7 +2,6 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable, Logger } from '@nestjs/common';
 import mjml2html from 'mjml';
 import { Health } from '../helpers/health';
-import { bytesToSize } from '../helpers/helpers';
 import { Result } from '../helpers/result';
 
 const LOGO =
@@ -38,17 +37,16 @@ export class MailService {
 		for (const result of results) {
 			rows.push(`
           <tr style="border-bottom:1px solid #e9e9e9;">
-            <td style="padding: 0 15px 0 0;">${result.name}</td>
-            <td style="padding: 0 15px 0 0;">${bytesToSize(result.size)}</td>
-            <td style="padding: 0 15px 0 0;">${result.previousSizes.map(bytesToSize).join(', ')}</td>
-            <td style="padding:20px 5px 20px 10px"><img width="32px" src="cid:error.png"></img></td>
-            <td style="padding: 0 0 0 15px;">${result.success}</td>
+            <td style="padding: 0 15px 0 0;">Process</td>
+            <td style="padding: 0 15px 0 0;">Previous Sizes</td>
+            <td style="padding: 0 15px 0 0;">Size</td>
+            <td style="padding:20px 5px 20px 10px">Status</td>
           </tr>
             `);
 		}
 
-		const template = `<mjml width="1000px">
-  <mj-body>
+		const template = `<mjml>
+  <mj-body width="1000px">
     <mj-section>
       <mj-column>
         <mj-image width="100px" src="cid:logo.png"></mj-image>
@@ -59,17 +57,15 @@ export class MailService {
           <tr style="border-bottom:1px solid #e9e9e9;">
             <td style="padding: 0 15px 0 0; font-weight: bold;">Disk space</td>
             <td style="padding: 0 15px 0 0; font-weight: bold;">-</td>
-            <td style="padding: 0 15px 0 0; font-weight: bold;">-</td>
-            <td style="padding: 0 15px;"><img width="32px" src="cid:success.png"></img></td>
-            <td style="padding: 0 0 0 15px; font-weight: bold;">${health.diskUsage} %</td>
+            <td style="padding: 0 15px 0 0; font-weight: bold;">${health.diskUsage} %</td>
+            <td style="padding: 0 15px;"><img width="24px" src="cid:success.png"></img></td>
           </tr>
           ${rows.join('\n')}
           <tr style="border-bottom:1px solid #e9e9e9;">
             <td style="padding: 0 15px 0 0;">Disk space</td>
             <td style="padding: 0 15px 0 0;">-</td>
-            <td style="padding: 0 15px 0 0;">-</td>
-            <td style="padding: 0 15px;"><img width="64px" src="cid:success.png"></img></td>
             <td style="padding: 0 0 0 15px;">${health.diskUsage} %</td>
+            <td style="padding: 0 15px;"><img width="24px" src="cid:success.png"></img></td>
           </tr>
         </mj-table>
       </mj-column>
