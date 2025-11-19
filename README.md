@@ -5,6 +5,14 @@ To enable a source, you need to set the corresponding environment variables.
 
 ## Setup
 
+### Create a user on the target server
+
+useradd -m bagpack
+mkdir -p /backup/<Folder>/
+chown bagpack:bagpack /backup/<Folder>/
+
+### Environment Variables
+
 TARGET_CONNECTION_STRING - The connection string to the storage where the backups will be stored (Format: <username>@<hostname>:<port>)
 TARGET_SSH_PRIVATE_KEY - The private SSH key used to connect to the target server
 TARGET_DIRECTORY - The directory where the backups will be stored

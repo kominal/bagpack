@@ -40,6 +40,9 @@ export class BackupScheduler {
 
 		this.logger.log(`Process completed in ${new Date().getTime() - time}ms`);
 
-		await this.mailService.sendResultMail(results.filter(Boolean), health);
+		await this.mailService.sendResultMail(
+			results.filter((r): r is Result => !!r),
+			health
+		);
 	}
 }

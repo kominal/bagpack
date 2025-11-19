@@ -7,7 +7,7 @@
 	"license": "UNLICENSED",
 	"scripts": {
 		"build": "nest build",
-		"start": "export DEV=true; nest start --watch"
+		"start": "nest start --watch"
 	},
 	"dependencies": {
 		"@nestjs-modules/mailer": "^1.11.0",

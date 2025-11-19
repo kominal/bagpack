@@ -10,8 +10,8 @@ const DATE_FORMAT = 'YYYY-MM-DD_HH-mm-ss';
 export function getTargetCredentials() {
 	const { TARGET_CONNECTION_STRING } = process.env;
 
-	const [TARGET_USERNAME, TARGET_URI] = TARGET_CONNECTION_STRING.split('@');
-	const [TARGET_HOST, TARGET_PORT] = TARGET_URI.split(':');
+	const [TARGET_USERNAME, TARGET_URI] = (TARGET_CONNECTION_STRING || '').split('@');
+	const [TARGET_HOST, TARGET_PORT] = (TARGET_URI || '').split(':');
 
 	return {
 		TARGET_USERNAME,

@@ -40,6 +40,8 @@ export class FileService {
 		} finally {
 			await client.end();
 		}
+
+		return { name: 'File', success: false, size: -1, previousSizes: [] };
 	}
 
 	private async createBackup(client: Client, directory: string, paths: string): Promise<number> {

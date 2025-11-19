@@ -15,14 +15,14 @@ import { Result } from '../helpers/result';
 export class RsyncService {
 	private readonly logger = new Logger(RsyncService.name);
 
-	public async run(): Promise<Result[] | undefined> {
+	public async run(): Promise<Result[]> {
 		this.logger.log('Running backup process RSYNC...');
 
 		const { RSYNC__PATHS } = process.env;
 
 		if (!RSYNC__PATHS) {
 			this.logger.warn('RSYNC__PATHS is not set, skipping backup...');
-			return;
+			return [];
 		}
 
 		const directory = `${process.env.TARGET_DIRECTORY}/rsync`;
@@ -44,6 +44,7 @@ export class RsyncService {
 		} finally {
 			await client.end();
 		}
+		return [];
 	}
 
 	private async createBackup(client: Client, directory: string, paths: string): Promise<Result[]> {
@@ -52,24 +53,29 @@ export class RsyncService {
 		const results: Result[] = [];
 
 		for (const filePath of paths.split(',')) {
-			const [name, path] = filePath.split(':');
-			const targetPath = `${directory}/${name}`;
-			await ensureDirectory(client, targetPath);
-			const targetSyncPath = `${targetPath}/sync`;
-			await ensureDirectory(client, targetSyncPath);
-			this.logger.log('Syncing...');
-			execSync(`rsync -e "ssh -o StrictHostKeyChecking=no" -az ${path} ${TARGET_USERNAME}@${TARGET_HOST}:${targetSyncPath}`);
-			this.logger.log('Zipping result...');
+			try {
+				const [name, path] = filePath.split(':');
+				const targetPath = `${directory}/${name}`;
+				await ensureDirectory(client, targetPath);
+				const targetSyncPath = `${targetPath}/sync`;
+				await ensureDirectory(client, targetSyncPath);
+				this.logger.log('Syncing...');
+				execSync(`rsync -e "ssh -o StrictHostKeyChecking=no" -az ${path} ${TARGET_USERNAME}@${TARGET_HOST}:${targetSyncPath}`);
+				this.logger.log('Zipping result...');
 
-			const targetFile = `${targetPath}/${generateFileName('zip')}`;
+				const targetFile = `${targetPath}/${generateFileName('zip')}`;
 
-			execSync(`ssh ${TARGET_USERNAME}@${TARGET_HOST} "zip -qr ${targetFile} ${targetSyncPath}"`);
-			this.logger.log('Cleanup up previous backups...');
-			const previousSizes = await cleanupDirectory(client, targetPath);
+				execSync(`ssh ${TARGET_USERNAME}@${TARGET_HOST} "zip -qr ${targetFile} ${targetSyncPath}"`);
+				this.logger.log('Cleanup up previous backups...');
+				const previousSizes = await cleanupDirectory(client, targetPath);
 
-			const size = await getFileSize(client, targetFile);
+				const size = await getFileSize(client, targetFile);
 
-			results.push({ name: `Rsync - ${name}`, success: true, size, previousSizes });
+				results.push({ name: `Rsync - ${name}`, success: true, size, previousSizes });
+			} catch (e) {
+				this.logger.error(e);
+				results.push({ name: `Rsync - ${filePath}`, success: false, size: -1, previousSizes: [] });
+			}
 		}
 
 		return results;

@@ -7,7 +7,7 @@ import { getTargetCredentials } from '../helpers/helpers';
 export class HealthService {
 	private readonly logger = new Logger(HealthService.name);
 
-	public async run(): Promise<Health | undefined> {
+	public async run(): Promise<Health> {
 		const { TARGET_HOST, TARGET_USERNAME } = getTargetCredentials();
 
 		this.logger.log('Loading result...');
@@ -19,6 +19,7 @@ export class HealthService {
 
 			return { success: true, diskUsage };
 		} catch (e) {
+			this.logger.error('Failed to get disk usage from target', e);
 			return { success: false, diskUsage: -1 };
 		}
 	}

@@ -36,6 +36,7 @@ export class MongoDBService {
 			return { name: 'MongoDB', success: true, size, previousSizes };
 		} catch (error) {
 			this.logger.error(error);
+			return { name: 'MongoDB', success: false, size: -1, previousSizes: [] };
 		} finally {
 			await client.end();
 		}

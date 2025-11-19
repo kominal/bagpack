@@ -22,7 +22,7 @@ export class GitLabService {
 
 		if (!GITLAB_URL || !GITLAB_GROUP_ID || !GITLAB_ACCESS_TOKEN) {
 			this.logger.warn('GITLAB_URL, GITLAB_GROUP_ID or GITLAB_ACCESS_TOKEN is not set, skipping backup...');
-			return;
+			return undefined;
 		}
 
 		const directory = `${process.env.TARGET_DIRECTORY}/gitlab`;
@@ -46,6 +46,8 @@ export class GitLabService {
 		} finally {
 			await client.end();
 		}
+
+		return { name: 'GitLab', success: false, size: -1, previousSizes: [] };
 	}
 
 	private async createBackup(client: Client, directory: string, url: string, groupId: string, accessToken: string): Promise<number> {

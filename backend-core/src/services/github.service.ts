@@ -19,7 +19,7 @@ export class GitHubService {
 
 		if (!GITHUB_ORGANIZATION || !GITHUB_PASSWORD) {
 			this.logger.warn('GITHUB_ORGANIZATION or GITHUB_PASSWORD is not set, skipping backup...');
-			return;
+			return undefined;
 		}
 
 		const directory = `${process.env.TARGET_DIRECTORY}/github`;
@@ -43,6 +43,8 @@ export class GitHubService {
 		} finally {
 			await client.end();
 		}
+
+		return { name: 'GitHub', success: false, size: -1, previousSizes: [] };
 	}
 
 	private async createBackup(client: Client, directory: string, organization: string, password: string): Promise<number> {
@@ -60,7 +62,9 @@ export class GitHubService {
 			for (const repository of repositories.data) {
 				this.logger.log(`Cloning repository ${repository.name}...`);
 
-				await git.clone(repository.clone_url.replace('https://', `https://${password}@`), `${tmpDir.name}/${repository.name}`);
+				if (repository.clone_url) {
+					await git.clone(repository.clone_url.replace('https://', `https://${password}@`), `${tmpDir.name}/${repository.name}`);
+				}
 			}
 
 			const archive = archiver('zip', {
