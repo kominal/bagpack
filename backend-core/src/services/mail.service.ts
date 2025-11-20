@@ -123,7 +123,7 @@ export class MailService {
 				from: `"Bagpack" <${MAIL_SENDER}>`,
 				subject: 'Bagpack Backup Report',
 				html: mjml2html(template).html,
-				attachments: [{ filename: 'logo.png', path: LOGO, cid: 'logo.png', contentDisposition: 'inline' }],
+				attachments: [{ filename: 'logo.png', path: LOGO, cid: 'logo.png', contentDisposition: 'inline' }, ...attachments],
 			});
 		} catch (e) {
 			this.logger.error(e);
