@@ -67,7 +67,7 @@ export class MailService {
             <td style="padding: 0 15px 0 0;">${result.name}</td>
             <td style="padding: 0 15px 0 0;">${bytesToSize(result.size)}</td>
             <td style="padding: 0 15px 0 0;">${result.previousSizes.map(bytesToSize).join(', ')}</td>
-            <td style="padding:20px 5px 20px 10px"><img width="24px" src="cid:${icon}"></img></td>
+            <td style="padding: 0 15px 0 0;"><img width="24px" src="cid:${icon}"></img></td>
           </tr>
             `);
 		}
@@ -77,7 +77,7 @@ export class MailService {
     <mj-section>
       <mj-column>
         <mj-image width="100px" src="cid:logo.png"></mj-image>
-        <mj-text style="font-weight: bold; text-align: center;">Bagpack Backup Report</mj-text>
+        <mj-text align="center" style="font-weight: bold">Bagpack Backup Report</mj-text>
         <mj-divider border-color="#051b56"></mj-divider>        
         <mj-table>
           <tr style="border-bottom: 1px solid #e9e9e9; font-weight: bold;">
@@ -90,14 +90,14 @@ export class MailService {
           <tr style="border-bottom:1px solid #e9e9e9;">
             <td style="padding: 0 15px 0 0;">Disk space</td>
             <td style="padding: 0 15px 0 0;">-</td>
-            <td style="padding: 0 0 0 15px;">${health.diskUsage} %</td>
-            <td style="padding: 0 15px;"><img width="24px" src="cid:success.png"></img></td>
+            <td style="padding: 0 15px 0 0;">${health.diskUsage} %</td>
+            <td style="padding: 0 15px 0 0;"><img width="24px" src="cid:success.png"></img></td>
           </tr>
           <tr style="border-bottom:1px solid #e9e9e9;">
             <td style="padding: 0 15px 0 0;">Runtime</td>
             <td style="padding: 0 15px 0 0;">-</td>
-            <td style="padding: 0 0 0 15px;">${msToTime(duration)} %</td>
-            <td style="padding: 0 15px;"><img width="24px" src="cid:success.png"></img></td>
+            <td style="padding: 0 15px 0 0;">${msToTime(duration)} %</td>
+            <td style="padding: 0 15px 0 0;"><img width="24px" src="cid:success.png"></img></td>
           </tr>
         </mj-table>
       </mj-column>
