@@ -64,10 +64,10 @@ export class MailService {
 
 			rows.push(`
           <tr style="border-bottom:1px solid #e9e9e9;">
-            <td style="padding: 0 15px 0 0;">${result.name}</td>
-            <td style="padding: 0 15px 0 0;">${bytesToSize(result.size)}</td>
-            <td style="padding: 0 15px 0 0;">${result.previousSizes.map(bytesToSize).join(', ')}</td>
-            <td style="padding: 0 15px 0 0;"><img width="24px" src="cid:${icon}"></img></td>
+            <td style="padding: 5px 15px 5px 0;">${result.name}</td>
+            <td style="padding: 5px 15px 5px 0;">${bytesToSize(result.size)}</td>
+            <td style="padding: 5px 15px 5px 0;">${result.previousSizes.map(bytesToSize).join(', ')}</td>
+            <td style="padding: 5px 15px 5px 0;"><img width="24px" src="cid:${icon}"></img></td>
           </tr>
             `);
 		}
@@ -81,23 +81,23 @@ export class MailService {
         <mj-divider border-color="#051b56"></mj-divider>        
         <mj-table>
           <tr style="border-bottom: 1px solid #e9e9e9; font-weight: bold;">
-            <td style="padding: 0 15px 0 0;">Process</td>
-            <td style="padding: 0 15px 0 0;">Previous Sizes</td>
-            <td style="padding: 0 15px 0 0;">Size</td>
-            <td style="padding:20px 5px 20px 10px">Status</td>
+            <td style="padding: 5px 15px 5px 0;">Process</td>
+            <td style="padding: 5px 15px 5px 0;">Size</td>
+            <td style="padding: 5px 15px 5px 0;">Previous Sizes</td>
+            <td style="padding: 5px 15px 5px 0;">Status</td>
           </tr>
           ${rows.join('\n')}
           <tr style="border-bottom:1px solid #e9e9e9;">
-            <td style="padding: 0 15px 0 0;">Disk space</td>
-            <td style="padding: 0 15px 0 0;">-</td>
-            <td style="padding: 0 15px 0 0;">${health.diskUsage} %</td>
-            <td style="padding: 0 15px 0 0;"><img width="24px" src="cid:success.png"></img></td>
+            <td style="padding: 5px 15px 5px 0;">Disk space</td>
+            <td style="padding: 5px 15px 5px 0;">-</td>
+            <td style="padding: 5px 15px 5px 0;">${health.diskUsage} %</td>
+            <td style="padding: 5px 15px 5px 0;"><img width="24px" src="cid:success.png"></img></td>
           </tr>
           <tr style="border-bottom:1px solid #e9e9e9;">
-            <td style="padding: 0 15px 0 0;">Runtime</td>
-            <td style="padding: 0 15px 0 0;">-</td>
-            <td style="padding: 0 15px 0 0;">${msToTime(duration)} %</td>
-            <td style="padding: 0 15px 0 0;"><img width="24px" src="cid:success.png"></img></td>
+            <td style="padding: 5px 15px 5px 0;">Runtime</td>
+            <td style="padding: 5px 15px 5px 0;">-</td>
+            <td style="padding: 5px 15px 5px 0;">${msToTime(duration)}</td>
+            <td style="padding: 5px 15px 5px 0;"><img width="24px" src="cid:success.png"></img></td>
           </tr>
         </mj-table>
       </mj-column>
@@ -117,11 +117,19 @@ export class MailService {
 			attachments.push({ filename: 'error.png', path: ERROR, cid: 'error.png', contentDisposition: 'inline' });
 		}
 
+		let icon = '✅';
+		if (hasWarning) {
+			icon = '⚠️';
+		}
+		if (hasError) {
+			icon = '❌';
+		}
+
 		try {
 			await this.mailerService.sendMail({
 				to: MAIL_RECIPIENTS.split(',').map((email) => email.trim()),
 				from: `"Bagpack" <${MAIL_SENDER}>`,
-				subject: 'Bagpack Backup Report',
+				subject: `${icon} | Bagpack Backup Report`,
 				html: mjml2html(template).html,
 				attachments: [{ filename: 'logo.png', path: LOGO, cid: 'logo.png', contentDisposition: 'inline' }, ...attachments],
 			});
