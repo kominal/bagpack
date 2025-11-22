@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import Client from 'ssh2-sftp-client';
-import { connectToTarget } from '../helpers/helpers';
+import { connectToTarget, msToTime } from '../helpers/helpers';
 import { Result } from '../helpers/result';
 import { FileService } from '../services/file.service';
 import { GitHubService } from '../services/github.service';
@@ -48,7 +48,7 @@ export class BackupScheduler {
 
 			const duration = new Date().getTime() - time;
 
-			this.logger.log(`Process completed in ${duration}ms`);
+			this.logger.log(`Process completed in ${msToTime(duration)}`);
 
 			await this.mailService.sendResultMail(
 				results.filter((r): r is Result => !!r),
@@ -56,6 +56,7 @@ export class BackupScheduler {
 				duration
 			);
 		} catch (e) {
+			console.log(e);
 			this.logger.error('Error during backup process', e);
 			try {
 				await client.end();

@@ -22,6 +22,8 @@ const SUCCESS =
 export class MailService {
 	private readonly logger = new Logger(MailService.name);
 
+	private previousRuns: { health: Health; duration: number }[] = [];
+
 	public constructor(private mailerService: MailerService) {}
 
 	public async sendResultMail(results: Result[], health: Health, duration: number): Promise<void> {
@@ -33,6 +35,13 @@ export class MailService {
 			this.logger.warn('MAIL_CONNECTION_STRING, MAIL_RECIPIENTS or MAIL_SENDER is not set, skipping report...');
 			return;
 		}
+
+		const relevantPreviousRuns = this.previousRuns.slice(-3);
+
+		const previousHealth = relevantPreviousRuns.length > 0 ? relevantPreviousRuns[relevantPreviousRuns.length - 1].health : undefined;
+		const previousDuration = relevantPreviousRuns.length > 0 ? relevantPreviousRuns[relevantPreviousRuns.length - 1].duration : undefined;
+
+		this.previousRuns.push({ health, duration });
 
 		const rows: string[] = [];
 
@@ -89,18 +98,18 @@ export class MailService {
           ${rows.join('\n')}
           <tr style="border-bottom:1px solid #e9e9e9;">
             <td style="padding: 5px 15px 5px 0;">Disk space</td>
-            <td style="padding: 5px 15px 5px 0;">-</td>
             <td style="padding: 5px 15px 5px 0;">${health.diskUsage} %</td>
+            <td style="padding: 5px 15px 5px 0;">${relevantPreviousRuns.map((run) => `${run.health.diskUsage} %`).join(', ')}</td>
             <td style="padding: 5px 15px 5px 0;"><img width="24px" src="cid:success.png"></img></td>
           </tr>
           <tr style="border-bottom:1px solid #e9e9e9;">
             <td style="padding: 5px 15px 5px 0;">Runtime</td>
-            <td style="padding: 5px 15px 5px 0;">-</td>
             <td style="padding: 5px 15px 5px 0;">${msToTime(duration)}</td>
+            <td style="padding: 5px 15px 5px 0;">${relevantPreviousRuns.map((run) => msToTime(run.duration)).join(', ')}</td>
             <td style="padding: 5px 15px 5px 0;"><img width="24px" src="cid:success.png"></img></td>
           </tr>
         </mj-table>
-      </mj-column>
+      </mj-column>  
     </mj-section>
   </mj-body>
 </mjml>`;
