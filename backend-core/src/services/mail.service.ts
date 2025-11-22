@@ -134,11 +134,14 @@ export class MailService {
 			icon = '❌';
 		}
 
+		const name = process.env.NAME;
+		const prefix = name ? ` | ${name}` : '';
+
 		try {
 			await this.mailerService.sendMail({
 				to: MAIL_RECIPIENTS.split(',').map((email) => email.trim()),
 				from: `"Bagpack" <${MAIL_SENDER}>`,
-				subject: `${icon} | Bagpack Backup Report`,
+				subject: `${icon} ${prefix}| Bagpack Backup Report`,
 				html: mjml2html(template).html,
 				attachments: [{ filename: 'logo.png', path: LOGO, cid: 'logo.png', contentDisposition: 'inline' }, ...attachments],
 			});
