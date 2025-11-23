@@ -1,9 +1,9 @@
 /* eslint-disable no-console */
 import archiver from 'archiver';
-import { existsSync, mkdirSync, PathLike } from 'fs';
+import { createWriteStream, existsSync, mkdirSync, PathLike } from 'fs';
 import simpleGit from 'simple-git';
 import Client from 'ssh2-sftp-client';
-import { dirSync } from 'tmp';
+import { dirSync, fileSync } from 'tmp';
 
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
@@ -148,9 +148,12 @@ export class GitLabService {
 
 			const throughputMeter = new ThroughputMeter({ reportInterval: 1000 });
 
-			await pipeline(archive, throughputMeter, output);
+			const tempFile = fileSync();
+			const tempOutput = createWriteStream(tempFile.name);
 
-			output.end();
+			await pipeline(archive, throughputMeter, tempOutput);
+
+			tempOutput.end();
 
 			this.logger.log('Archive created successfully');
 
