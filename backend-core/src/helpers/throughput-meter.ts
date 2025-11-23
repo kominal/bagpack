@@ -51,7 +51,7 @@ export class ThroughputMeter extends Transform {
 		const rateMBps = bytesSinceLastReport / (1024 * 1024) / currentDuration;
 
 		this.logger.log(
-			`Throughput Meter - Elapsed Time: ${elapsedTime.toFixed(2)}s, Total Data: ${totalMB.toFixed(2)} MB, Instantaneous Rate: ${rateMBps.toFixed(2)} MB/s`
+			`Elapsed Time: ${elapsedTime.toFixed(2)}s, Total Data: ${totalMB.toFixed(2)} MB, Instantaneous Rate: ${rateMBps.toFixed(2)} MB/s`
 		);
 
 		// Update state for the next report

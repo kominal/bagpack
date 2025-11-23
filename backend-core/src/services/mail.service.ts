@@ -66,16 +66,16 @@ export class MailService {
 		}
 
 		displayedResults.push({
-			name: 'Disk space',
+			name: 'Disk usage',
 			size: `${health.diskUsage} %`,
-			previousSizes: relevantPreviousRuns.map((run) => `${run.health.diskUsage} %`).join(', '),
+			previousSizes: relevantPreviousRuns.map((run) => `${run.health.diskUsage} %`).join(', ') || '-',
 			status: 'SUCCESS',
 		});
 
 		displayedResults.push({
 			name: 'Runtime',
 			size: msToTime(duration),
-			previousSizes: relevantPreviousRuns.map((run) => msToTime(run.duration)).join(', '),
+			previousSizes: relevantPreviousRuns.map((run) => msToTime(run.duration)).join(', ') || '-',
 			status: 'SUCCESS',
 		});
 
