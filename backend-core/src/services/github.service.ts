@@ -44,6 +44,8 @@ export class GitHubService {
 	private async createBackup(client: Client, directory: string, organization: string, password: string): Promise<number> {
 		const octokit = new Octokit({ auth: password });
 
+		this.logger.log('Reading repositories from GitHub...');
+
 		const repositories = await octokit.request('GET /orgs/{org}/repos', {
 			org: organization,
 			headers: { 'X-GitHub-Api-Version': '2022-11-28' },
@@ -53,6 +55,8 @@ export class GitHubService {
 		try {
 			const git = simpleGit();
 
+			this.logger.log(`Found ${repositories.data.length} repositories. Cloning...`);
+
 			for (const repository of repositories.data) {
 				this.logger.log(`Cloning repository ${repository.name}...`);
 
@@ -61,9 +65,9 @@ export class GitHubService {
 				}
 			}
 
-			const archive = archiver('zip', {
-				zlib: { level: 9 },
-			});
+			this.logger.log('Creating archive...');
+
+			const archive = archiver('zip');
 
 			const targetFile = `${directory}/${generateFileName('zip')}`;
 
@@ -74,6 +78,14 @@ export class GitHubService {
 					console.log('warning', err);
 				} else {
 					throw err;
+				}
+			});
+			let currentProgress = 0;
+			archive.on('progress', (progress) => {
+				const percent = Math.round((progress.fs.processedBytes / progress.fs.totalBytes) * 100);
+				if (percent % 10 === 0 && percent !== currentProgress) {
+					this.logger.log(`Archive progress: ${percent}%`);
+					currentProgress = percent;
 				}
 			});
 			archive.on('error', (err) => {

@@ -39,9 +39,7 @@ export class FileService {
 	}
 
 	private async createBackup(client: Client, directory: string, paths: string): Promise<number> {
-		const archive = archiver('zip', {
-			zlib: { level: 9 },
-		});
+		const archive = archiver('zip');
 
 		const targetFile = `${directory}/${generateFileName('zip')}`;
 
