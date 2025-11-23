@@ -135,7 +135,7 @@ export class MailService {
 		}
 
 		const name = process.env.NAME;
-		const prefix = name ? ` | ${name}` : '';
+		const prefix = name ? `| ${name} ` : '';
 
 		try {
 			await this.mailerService.sendMail({
