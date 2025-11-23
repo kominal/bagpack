@@ -53,6 +53,8 @@ export class GitLabService {
 		try {
 			const git = simpleGit();
 
+			this.logger.log(`Found ${rootRepositories.length} repositories. Cloning...`);
+
 			for (const repository of rootRepositories) {
 				try {
 					console.log(`Cloning to ${tmpDir.name}/${repository.path}`);
@@ -65,12 +67,17 @@ export class GitLabService {
 				}
 			}
 
+			this.logger.log(`Found ${groups.length} groups. Processing...`);
+
 			for (const group of groups) {
 				const path = `${tmpDir.name}/${group.full_path}`;
 
 				this.createDirectory(path);
 
 				const repositories = await this.getRepositories(url, group.id, accessToken);
+
+				this.logger.log(`Found ${repositories.length} repositories. Cloning...`);
+
 				for (const repository of repositories) {
 					try {
 						console.log(`Cloning ${path}/${repository.path}`);
@@ -84,6 +91,8 @@ export class GitLabService {
 				}
 			}
 
+			this.logger.log('Creating archive...');
+
 			const archive = archiver('zip');
 
 			const targetFile = `${directory}/${generateFileName('zip')}`;
@@ -95,6 +104,14 @@ export class GitLabService {
 					console.log('warning', err);
 				} else {
 					throw err;
+				}
+			});
+			let currentProgress = 0;
+			archive.on('progress', (progress) => {
+				const percent = Math.round((progress.fs.processedBytes / progress.fs.totalBytes) * 100);
+				if (percent % 10 === 0 && percent !== currentProgress) {
+					this.logger.log(`Archive progress: ${percent}%`);
+					currentProgress = percent;
 				}
 			});
 			archive.on('error', (err) => {
