@@ -1,6 +1,9 @@
+import { Logger } from '@nestjs/common';
 import { Transform } from 'stream';
 
 export class ThroughputMeter extends Transform {
+	private readonly logger = new Logger(ThroughputMeter.name);
+
 	private totalBytes: number;
 	private startTime: number;
 	private reportInterval: number;
@@ -28,13 +31,13 @@ export class ThroughputMeter extends Transform {
 
 	_flush(callback: (error?: Error | null) => void) {
 		// Report final metrics when the stream ends
-		this.reportProgress(true);
+		this.reportProgress();
 		// Clear the interval
 		clearInterval(this.intervalId);
 		callback();
 	}
 
-	reportProgress(isFinal = false) {
+	reportProgress() {
 		const currentTime = Date.now();
 		const elapsedTime = (currentTime - this.startTime) / 1000; // Time in seconds
 		const currentDuration = (currentTime - this.lastReportTime) / 1000; // Duration since last report
@@ -47,12 +50,9 @@ export class ThroughputMeter extends Transform {
 		const bytesSinceLastReport = this.totalBytes - (this.lastBytesReported || 0);
 		const rateMBps = bytesSinceLastReport / (1024 * 1024) / currentDuration;
 
-		const status = isFinal ? 'FINAL' : 'IN PROGRESS';
-
-		console.log(`\n=== Throughput Report [${status}] ===`);
-		console.log(`⏱️ Elapsed Time: ${elapsedTime.toFixed(2)} seconds`);
-		console.log(`📦 Total Data: ${totalMB.toFixed(2)} MB`);
-		console.log(`⚡ Instantaneous Rate: **${rateMBps.toFixed(2)} MB/s**`);
+		this.logger.log(
+			`Throughput Meter - Elapsed Time: ${elapsedTime.toFixed(2)}s, Total Data: ${totalMB.toFixed(2)} MB, Instantaneous Rate: ${rateMBps.toFixed(2)} MB/s`
+		);
 
 		// Update state for the next report
 		this.lastReportTime = currentTime;

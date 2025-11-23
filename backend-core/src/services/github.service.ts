@@ -7,6 +7,7 @@ import { pipeline } from 'stream/promises';
 import { dirSync } from 'tmp';
 import { cleanupDirectory, ensureDirectory, generateFileName, getFileSize } from '../helpers/helpers';
 import { Result } from '../helpers/result';
+import { ThroughputMeter } from '../helpers/throughput-meter';
 
 @Injectable()
 export class GitHubService {
@@ -67,25 +68,17 @@ export class GitHubService {
 
 			this.logger.log('Creating archive...');
 
-			const archive = archiver('zip');
+			const archive = archiver('zip', { zlib: { level: 9 } });
 
 			const targetFile = `${directory}/${generateFileName('zip')}`;
 
-			const output = client.createWriteStream(targetFile);
+			const output = client.createWriteStream(targetFile, { highWaterMark: 1024 * 1024 * 100 });
 
 			archive.on('warning', (err) => {
 				if (err.code === 'ENOENT') {
 					console.log('warning', err);
 				} else {
 					throw err;
-				}
-			});
-			let currentProgress = 0;
-			archive.on('progress', (progress) => {
-				const percent = Math.round((progress.entries.processed / progress.entries.total) * 100);
-				if (percent !== currentProgress) {
-					this.logger.log(`Archive progress: ${percent}% (${progress.entries.processed}/${progress.entries.total} entries)`);
-					currentProgress = percent;
 				}
 			});
 			archive.on('error', (err) => {
@@ -95,7 +88,9 @@ export class GitHubService {
 			archive.directory(tmpDir.name, false);
 			archive.finalize();
 
-			await pipeline(archive, output);
+			const throughputMeter = new ThroughputMeter({ reportInterval: 10000 });
+
+			await pipeline(archive, throughputMeter, output);
 
 			output.end();
 
