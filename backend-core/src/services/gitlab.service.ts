@@ -84,7 +84,7 @@ export class GitLabService {
 				}
 			}
 
-			const archive = archiver('zip', { zlib: { level: 9 } });
+			const archive = archiver('zip');
 
 			const targetFile = `${directory}/${generateFileName('zip')}`;
 

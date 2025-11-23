@@ -26,6 +26,17 @@ export class MailService {
 
 	public constructor(private mailerService: MailerService) {}
 
+	private toIcon(status: 'ERROR' | 'WARNING' | 'SUCCESS'): string {
+		switch (status) {
+			case 'SUCCESS':
+				return 'cid:success.png';
+			case 'WARNING':
+				return 'cid:warning.png';
+			case 'ERROR':
+				return 'cid:error.png';
+		}
+	}
+
 	public async sendResultMail(results: Result[], health: Health, duration: number): Promise<void> {
 		this.logger.log('Running mail service...');
 
@@ -43,43 +54,41 @@ export class MailService {
 
 		this.previousRuns.push({ health, duration });
 
-		const rows: string[] = [];
-
-		let hasError = false;
-		let hasWarning = false;
-		let hasSucess = false;
+		const displayedResults: { name: string; size: string; previousSizes: string; status: 'SUCCESS' | 'WARNING' | 'ERROR' }[] = [];
 
 		for (const result of results) {
-			let icon = 'error.png';
+			displayedResults.push({
+				name: result.name,
+				size: bytesToSize(result.size),
+				previousSizes: result.previousSizes.map(bytesToSize).join(', '),
+				status: result.success ? 'SUCCESS' : 'ERROR',
+			});
+		}
 
-			if (result.success) {
-				icon = 'success.png';
+		displayedResults.push({
+			name: 'Disk space',
+			size: `${health.diskUsage} %`,
+			previousSizes: relevantPreviousRuns.map((run) => `${run.health.diskUsage} %`).join(', '),
+			status: 'SUCCESS',
+		});
 
-				if (result.previousSizes.length > 0) {
-					const previousSize = result.previousSizes[result.previousSizes.length - 1];
-					if (result.size > previousSize * 1.1) {
-						icon = 'warning.png';
-					}
-				}
-			}
+		displayedResults.push({
+			name: 'Runtime',
+			size: msToTime(duration),
+			previousSizes: relevantPreviousRuns.map((run) => msToTime(run.duration)).join(', '),
+			status: 'SUCCESS',
+		});
 
-			if (icon === 'error.png') {
-				hasError = true;
-			} else if (icon === 'warning.png') {
-				hasWarning = true;
-			} else {
-				hasSucess = true;
-			}
-
-			rows.push(`
+		const rows = displayedResults.map(
+			(result) => `
           <tr style="border-bottom:1px solid #e9e9e9;">
             <td style="padding: 5px 15px 5px 0;">${result.name}</td>
-            <td style="padding: 5px 15px 5px 0;">${bytesToSize(result.size)}</td>
-            <td style="padding: 5px 15px 5px 0;">${result.previousSizes.map(bytesToSize).join(', ')}</td>
-            <td style="padding: 5px 15px 5px 0;"><img width="24px" src="cid:${icon}"></img></td>
+            <td style="padding: 5px 15px 5px 0;">${result.size}</td>
+            <td style="padding: 5px 15px 5px 0;">${result.previousSizes}</td>
+            <td style="padding: 5px 15px 5px 0;"><img width="24px" src="${this.toIcon(result.status)}"></img></td>
           </tr>
-            `);
-		}
+            `
+		);
 
 		const template = `<mjml>
   <mj-body width="1000px">
@@ -96,18 +105,6 @@ export class MailService {
             <td style="padding: 5px 15px 5px 0;">Status</td>
           </tr>
           ${rows.join('\n')}
-          <tr style="border-bottom:1px solid #e9e9e9;">
-            <td style="padding: 5px 15px 5px 0;">Disk space</td>
-            <td style="padding: 5px 15px 5px 0;">${health.diskUsage} %</td>
-            <td style="padding: 5px 15px 5px 0;">${relevantPreviousRuns.map((run) => `${run.health.diskUsage} %`).join(', ')}</td>
-            <td style="padding: 5px 15px 5px 0;"><img width="24px" src="cid:success.png"></img></td>
-          </tr>
-          <tr style="border-bottom:1px solid #e9e9e9;">
-            <td style="padding: 5px 15px 5px 0;">Runtime</td>
-            <td style="padding: 5px 15px 5px 0;">${msToTime(duration)}</td>
-            <td style="padding: 5px 15px 5px 0;">${relevantPreviousRuns.map((run) => msToTime(run.duration)).join(', ')}</td>
-            <td style="padding: 5px 15px 5px 0;"><img width="24px" src="cid:success.png"></img></td>
-          </tr>
         </mj-table>
       </mj-column>  
     </mj-section>
@@ -116,22 +113,21 @@ export class MailService {
 
 		const attachments: ISendMailOptions['attachments'] = [];
 
-		if (hasSucess) {
+		if (displayedResults.some((r) => r.status === 'SUCCESS')) {
 			attachments.push({ filename: 'success.png', path: SUCCESS, cid: 'success.png', contentDisposition: 'inline' });
 		}
-		if (hasWarning) {
+		if (displayedResults.some((r) => r.status === 'WARNING')) {
 			attachments.push({ filename: 'warning.png', path: WARNING, cid: 'warning.png', contentDisposition: 'inline' });
 		}
-		if (hasError) {
+		if (displayedResults.some((r) => r.status === 'ERROR')) {
 			attachments.push({ filename: 'error.png', path: ERROR, cid: 'error.png', contentDisposition: 'inline' });
 		}
 
 		let icon = '✅';
-		if (hasWarning) {
-			icon = '⚠️';
-		}
-		if (hasError) {
+		if (displayedResults.some((r) => r.status === 'ERROR')) {
 			icon = '❌';
+		} else if (displayedResults.some((r) => r.status === 'WARNING')) {
+			icon = '⚠️';
 		}
 
 		const name = process.env.NAME;
