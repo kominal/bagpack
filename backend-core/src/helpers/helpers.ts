@@ -87,5 +87,5 @@ export async function cleanupDirectory(client: Client, directory: string): Promi
 		await client.delete(`${directory}/${file.name}`);
 	}
 
-	return previousSizes.reverse();
+	return previousSizes;
 }

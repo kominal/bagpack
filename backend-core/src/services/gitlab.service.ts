@@ -58,13 +58,13 @@ export class GitLabService {
 
 			for (const repository of rootRepositories) {
 				try {
-					console.log(`Cloning to ${tmpDir.name}/${repository.path}`);
+					this.logger.log(`Cloning to ${tmpDir.name}/${repository.path}`);
 					await git.clone(
 						repository.http_url_to_repo.replace('https://', `https://oauth2:${accessToken}@`),
 						`${tmpDir.name}/${repository.path}`
 					);
 				} catch (error) {
-					console.log(`Failed to clone ${tmpDir.name}/${repository.path}`);
+					this.logger.log(`Failed to clone ${tmpDir.name}/${repository.path}`);
 				}
 			}
 
@@ -81,13 +81,13 @@ export class GitLabService {
 
 				for (const repository of repositories) {
 					try {
-						console.log(`Cloning ${path}/${repository.path}`);
+						this.logger.log(`Cloning ${path}/${repository.path}`);
 						await git.clone(
 							repository.http_url_to_repo.replace('https://', `https://oauth2:${accessToken}@`),
 							`${path}/${repository.path}`
 						);
 					} catch (e) {
-						console.log(e);
+						this.logger.log(e);
 					}
 				}
 			}
@@ -102,7 +102,7 @@ export class GitLabService {
 
 			archive.on('warning', (err) => {
 				if (err.code === 'ENOENT') {
-					console.log('warning', err);
+					this.logger.log('warning', err);
 				} else {
 					throw err;
 				}

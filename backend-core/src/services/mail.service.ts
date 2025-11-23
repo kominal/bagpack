@@ -101,7 +101,7 @@ export class MailService {
           <tr style="border-bottom: 1px solid #e9e9e9; font-weight: bold;">
             <td style="padding: 5px 15px 5px 0;">Process</td>
             <td style="padding: 5px 15px 5px 0;">Size</td>
-            <td style="padding: 5px 15px 5px 0;">Previous Sizes</td>
+            <td style="padding: 5px 15px 5px 0;">Previous Sizes (latest first)</td>
             <td style="padding: 5px 15px 5px 0;">Status</td>
           </tr>
           ${rows.join('\n')}
