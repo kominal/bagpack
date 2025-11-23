@@ -111,6 +111,38 @@ export class GitLabService {
 				throw err;
 			});
 
+			const startTime = Date.now();
+			let lastBytesProcessed = 0;
+			let lastReportDuration: number | null = null;
+			archive.on('progress', (data) => {
+				// The 'data' object provides useful metrics
+
+				// 1. Progress (Files)
+				const filesProcessed = data.entries.processed;
+				const totalFiles = data.entries.total;
+
+				// 2. Throughput (Bytes)
+				const currentBytes = data.fs.processedBytes;
+				const totalBytes = data.fs.totalBytes; // Total uncompressed source size
+				const currentDuration = (Date.now() - startTime) / 1000;
+
+				// Calculate instantaneous rate since the last event
+				const bytesSinceLastEvent = currentBytes - lastBytesProcessed;
+				const rateMBps = bytesSinceLastEvent / (1024 * 1024) / (currentDuration - (lastReportDuration || 0));
+
+				// Display results
+				const percentage = (currentBytes / totalBytes) * 100;
+
+				// Use process.stdout.write for a single-line progress update (optional)
+				this.logger.log(
+					`\rProgress: ${percentage.toFixed(2)}% | ` + `Files: ${filesProcessed}/${totalFiles} | ` + `Rate: ${rateMBps.toFixed(2)} MB/s`
+				);
+
+				// Update state
+				lastBytesProcessed = currentBytes;
+				lastReportDuration = currentDuration;
+			});
+
 			archive.directory(tmpDir.name, false);
 			archive.finalize();
 
