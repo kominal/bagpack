@@ -10,6 +10,7 @@ import axios from 'axios';
 import { pipeline } from 'stream/promises';
 import { cleanupDirectory, ensureDirectory, generateFileName, getFileSize } from '../helpers/helpers';
 import { Result } from '../helpers/result';
+import { ThroughputMeter } from '../helpers/throughput-meter';
 
 @Injectable()
 export class GitLabService {
@@ -93,7 +94,7 @@ export class GitLabService {
 
 			this.logger.log('Creating archive...');
 
-			const archive = archiver('zip');
+			const archive = archiver('zip', { zlib: { level: 1 } });
 
 			const targetFile = `${directory}/${generateFileName('zip')}`;
 
@@ -106,14 +107,6 @@ export class GitLabService {
 					throw err;
 				}
 			});
-			let currentProgress = 0;
-			archive.on('progress', (progress) => {
-				const percent = Math.round((progress.entries.processed / progress.entries.total) * 100);
-				if (percent !== currentProgress) {
-					this.logger.log(`Archive progress: ${percent}% (${progress.entries.processed}/${progress.entries.total} entries)`);
-					currentProgress = percent;
-				}
-			});
 			archive.on('error', (err) => {
 				throw err;
 			});
@@ -121,7 +114,9 @@ export class GitLabService {
 			archive.directory(tmpDir.name, false);
 			archive.finalize();
 
-			await pipeline(archive, output);
+			const throughputMeter = new ThroughputMeter({ reportInterval: 1000 });
+
+			await pipeline(archive, throughputMeter, output);
 
 			output.end();
 
