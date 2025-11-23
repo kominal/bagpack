@@ -108,9 +108,9 @@ export class GitLabService {
 			});
 			let currentProgress = 0;
 			archive.on('progress', (progress) => {
-				const percent = Math.round((progress.fs.processedBytes / progress.fs.totalBytes) * 100);
-				if (percent % 10 === 0 && percent !== currentProgress) {
-					this.logger.log(`Archive progress: ${percent}%`);
+				const percent = Math.round((progress.entries.processed / progress.entries.total) * 100);
+				if (percent !== currentProgress) {
+					this.logger.log(`Archive progress: ${percent}% (${progress.entries.processed}/${progress.entries.total} entries)`);
 					currentProgress = percent;
 				}
 			});
