@@ -20,12 +20,17 @@ export function getTargetCredentials() {
 	};
 }
 
+export function getTargetPort(): number {
+	const { TARGET_PORT } = getTargetCredentials();
+	return TARGET_PORT ? parseInt(TARGET_PORT, 10) : 22;
+}
+
 export async function connectToTarget(client: Client): Promise<void> {
-	const { TARGET_HOST, TARGET_PORT, TARGET_USERNAME } = getTargetCredentials();
+	const { TARGET_HOST, TARGET_USERNAME } = getTargetCredentials();
 
 	await client.connect({
 		host: TARGET_HOST,
-		port: parseInt(TARGET_PORT || '22', 10),
+		port: getTargetPort(),
 		username: TARGET_USERNAME,
 		privateKey: process.env.TARGET_SSH_PRIVATE_KEY,
 	});

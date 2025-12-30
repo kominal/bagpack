@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { execSync } from 'child_process';
 import { Health } from '../helpers/health';
-import { getTargetCredentials } from '../helpers/helpers';
+import { getTargetCredentials, getTargetPort } from '../helpers/helpers';
 
 @Injectable()
 export class HealthService {
@@ -9,12 +9,13 @@ export class HealthService {
 
 	public async run(): Promise<Health> {
 		const { TARGET_HOST, TARGET_USERNAME } = getTargetCredentials();
+		const targetPort = getTargetPort();
 
 		this.logger.log('Loading result...');
 
 		try {
 			const result = execSync(
-				`ssh -o StrictHostKeyChecking=no ${TARGET_USERNAME}@${TARGET_HOST} "df -h | grep '/$' | sed -E 's/^[^%]*\\s+([0-9]+)%.*$/\\1/'"`
+				`ssh -o StrictHostKeyChecking=no -p${targetPort} ${TARGET_USERNAME}@${TARGET_HOST} "df -h | grep '/$' | sed -E 's/^[^%]*\\s+([0-9]+)%.*$/\\1/'"`
 			);
 
 			const diskUsage = parseInt(result.toString().trim(), 10);

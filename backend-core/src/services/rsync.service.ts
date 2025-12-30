@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { execSync } from 'child_process';
 import Client from 'ssh2-sftp-client';
-import { cleanupDirectory, ensureDirectory, generateFileName, getFileSize, getTargetCredentials } from '../helpers/helpers';
+import { cleanupDirectory, ensureDirectory, generateFileName, getFileSize, getTargetCredentials, getTargetPort } from '../helpers/helpers';
 import { Result } from '../helpers/result';
 
 @Injectable()
@@ -39,6 +39,7 @@ export class RsyncService {
 
 	private async createBackup(client: Client, directory: string, paths: string, syncOnly: boolean): Promise<Result[]> {
 		const { TARGET_HOST, TARGET_USERNAME } = getTargetCredentials();
+		const targetPort = getTargetPort();
 
 		const results: Result[] = [];
 
@@ -50,7 +51,9 @@ export class RsyncService {
 				const targetSyncPath = `${targetPath}/sync`;
 				await ensureDirectory(client, targetSyncPath);
 				this.logger.log('Syncing...');
-				execSync(`rsync -e "ssh -o StrictHostKeyChecking=no" -az ${path} ${TARGET_USERNAME}@${TARGET_HOST}:${targetSyncPath}`);
+				execSync(
+					`rsync -e "ssh -o StrictHostKeyChecking=no -p${targetPort}" -az ${path} ${TARGET_USERNAME}@${TARGET_HOST}:${targetSyncPath}`
+				);
 
 				if (!syncOnly) {
 					results.push({ name: `Rsync - ${name}`, success: true, size: 0, previousSizes: [] });
@@ -59,7 +62,9 @@ export class RsyncService {
 
 					const targetFile = `${targetPath}/${generateFileName('zip')}`;
 
-					execSync(`ssh -o StrictHostKeyChecking=no ${TARGET_USERNAME}@${TARGET_HOST} "zip -qr ${targetFile} ${targetSyncPath}"`);
+					execSync(
+						`ssh -o StrictHostKeyChecking=no -p${targetPort} ${TARGET_USERNAME}@${TARGET_HOST} "zip -qr ${targetFile} ${targetSyncPath}"`
+					);
 					this.logger.log('Cleanup up previous backups...');
 					const previousSizes = await cleanupDirectory(client, targetPath);
 
