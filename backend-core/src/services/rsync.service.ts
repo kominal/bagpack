@@ -55,7 +55,7 @@ export class RsyncService {
 					`rsync -e "ssh -o StrictHostKeyChecking=no -p${targetPort}" -az ${path} ${TARGET_USERNAME}@${TARGET_HOST}:${targetSyncPath}`
 				);
 
-				if (!syncOnly) {
+				if (syncOnly) {
 					results.push({ name: `Rsync - ${name}`, success: true, size: 0, previousSizes: [] });
 				} else {
 					this.logger.log('Zipping result...');
