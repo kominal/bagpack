@@ -33,6 +33,7 @@ export async function connectToTarget(client: Client): Promise<void> {
 		port: getTargetPort(),
 		username: TARGET_USERNAME,
 		privateKey: process.env.TARGET_SSH_PRIVATE_KEY,
+		keepaliveInterval: 10000,
 	});
 }
 
@@ -74,6 +75,8 @@ export async function getFileSize(client: Client, path: string): Promise<number>
 }
 
 export async function cleanupDirectory(client: Client, directory: string): Promise<number[]> {
+	await connectToTarget(client);
+
 	const files = (await client.list(directory))
 		.filter((f) => f.type === '-')
 		.sort((a, b) => parseDate(b.name).getTime() - parseDate(a.name).getTime());
