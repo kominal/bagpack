@@ -42,7 +42,7 @@ export class RsyncService {
 			this.logger.error(error);
 		}
 
-		return [];
+		return [{ name: 'Rsync', success: false, size: -1, previousSizes: [] }];
 	}
 
 	private async createBackup(directory: string, paths: string, syncOnly: boolean): Promise<Result[]> {
