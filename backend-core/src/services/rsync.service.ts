@@ -1,14 +1,21 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { execSync } from 'child_process';
-import Client from 'ssh2-sftp-client';
-import { cleanupDirectory, ensureDirectory, generateFileName, getFileSize, getTargetCredentials, getTargetPort } from '../helpers/helpers';
+import {
+	cleanupDirectory,
+	connectToTarget,
+	ensureDirectory,
+	generateFileName,
+	getFileSize,
+	getTargetCredentials,
+	getTargetPort,
+} from '../helpers/helpers';
 import { Result } from '../helpers/result';
 
 @Injectable()
 export class RsyncService {
 	private readonly logger = new Logger(RsyncService.name);
 
-	public async run(client: Client): Promise<Result[]> {
+	public async run(): Promise<Result[]> {
 		this.logger.log('Running backup process RSYNC...');
 
 		const { RSYNC__PATHS, RSYNC__MODE } = process.env;
@@ -24,9 +31,10 @@ export class RsyncService {
 
 		try {
 			this.logger.log('Ensuring directory exists...');
+			const client = await connectToTarget();
 			await ensureDirectory(client, directory);
 			this.logger.log('Creating new backup...');
-			const results = await this.createBackup(client, directory, RSYNC__PATHS, syncOnly);
+			const results = await this.createBackup(directory, RSYNC__PATHS, syncOnly);
 			this.logger.log('Process completed successfully');
 
 			return results;
@@ -37,7 +45,7 @@ export class RsyncService {
 		return [];
 	}
 
-	private async createBackup(client: Client, directory: string, paths: string, syncOnly: boolean): Promise<Result[]> {
+	private async createBackup(directory: string, paths: string, syncOnly: boolean): Promise<Result[]> {
 		const { TARGET_HOST, TARGET_USERNAME } = getTargetCredentials();
 		const targetPort = getTargetPort();
 
@@ -47,9 +55,13 @@ export class RsyncService {
 			try {
 				const [name, path] = filePath.split(':');
 				const targetPath = `${directory}/${name}`;
-				await ensureDirectory(client, targetPath);
 				const targetSyncPath = `${targetPath}/sync`;
-				await ensureDirectory(client, targetSyncPath);
+
+				const preClient = await connectToTarget();
+				await ensureDirectory(preClient, targetPath);
+				await ensureDirectory(preClient, targetSyncPath);
+				await preClient.end();
+
 				this.logger.log('Syncing...');
 				execSync(
 					`rsync -e "ssh -o StrictHostKeyChecking=no -p${targetPort}" -az ${path} ${TARGET_USERNAME}@${TARGET_HOST}:${targetSyncPath}`
@@ -66,9 +78,11 @@ export class RsyncService {
 						`ssh -o StrictHostKeyChecking=no -p${targetPort} ${TARGET_USERNAME}@${TARGET_HOST} "zip -qr ${targetFile} ${targetSyncPath}"`
 					);
 					this.logger.log('Cleanup up previous backups...');
-					const previousSizes = await cleanupDirectory(client, targetPath);
 
-					const size = await getFileSize(client, targetFile);
+					const postClient = await connectToTarget();
+					const previousSizes = await cleanupDirectory(postClient, targetPath);
+					const size = await getFileSize(postClient, targetFile);
+					await postClient.end();
 
 					results.push({ name: `Rsync - ${name}`, success: true, size, previousSizes });
 				}

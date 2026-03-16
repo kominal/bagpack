@@ -8,7 +8,7 @@ import { dirSync } from 'tmp';
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import { pipeline } from 'stream/promises';
-import { cleanupDirectory, ensureDirectory, generateFileName, getFileSize } from '../helpers/helpers';
+import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName, getFileSize } from '../helpers/helpers';
 import { Result } from '../helpers/result';
 import { ThroughputMeter } from '../helpers/throughput-meter';
 
@@ -16,7 +16,7 @@ import { ThroughputMeter } from '../helpers/throughput-meter';
 export class GitLabService {
 	private readonly logger = new Logger(GitLabService.name);
 
-	public async run(client: Client): Promise<Result | undefined> {
+	public async run(): Promise<Result | undefined> {
 		this.logger.log('Running backup process GITLAB...');
 
 		const { GITLAB_URL, GITLAB_GROUP_ID, GITLAB_ACCESS_TOKEN } = process.env;
@@ -30,12 +30,14 @@ export class GitLabService {
 
 		try {
 			this.logger.log('Ensuring directory exists...');
+			const client = await connectToTarget();
 			await ensureDirectory(client, directory);
 			this.logger.log('Creating new backup...');
 			const size = await this.createBackup(client, directory, GITLAB_URL, GITLAB_GROUP_ID, GITLAB_ACCESS_TOKEN);
 			this.logger.log('Cleanup up previous backups...');
 			const previousSizes = await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
+			await client.end();
 
 			return { name: 'GitLab', success: true, size, previousSizes };
 		} catch (error) {

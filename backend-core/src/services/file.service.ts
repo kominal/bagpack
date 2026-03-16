@@ -2,14 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import archiver from 'archiver';
 import Client from 'ssh2-sftp-client';
 import { pipeline } from 'stream/promises';
-import { cleanupDirectory, ensureDirectory, generateFileName, getFileSize } from '../helpers/helpers';
+import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName, getFileSize } from '../helpers/helpers';
 import { Result } from '../helpers/result';
 
 @Injectable()
 export class FileService {
 	private readonly logger = new Logger(FileService.name);
 
-	public async run(client: Client): Promise<Result | undefined> {
+	public async run(): Promise<Result | undefined> {
 		this.logger.log('Running backup process FILE...');
 
 		const { FILE_PATHS } = process.env;
@@ -23,12 +23,14 @@ export class FileService {
 
 		try {
 			this.logger.log('Ensuring directory exists...');
+			const client = await connectToTarget();
 			await ensureDirectory(client, directory);
 			this.logger.log('Creating new backup...');
 			const size = await this.createBackup(client, directory, FILE_PATHS);
 			this.logger.log('Cleanup up previous backups...');
 			const previousSizes = await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
+			await client.end();
 
 			return { name: 'File', success: true, size, previousSizes };
 		} catch (error) {

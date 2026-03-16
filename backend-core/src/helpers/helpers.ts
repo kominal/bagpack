@@ -1,5 +1,8 @@
+import { Logger } from '@nestjs/common';
 import dayjs, { extend } from 'dayjs';
 import Client from 'ssh2-sftp-client';
+
+const logger = new Logger('Helpers');
 
 const customParseFormat = require('dayjs/plugin/customParseFormat');
 
@@ -25,9 +28,12 @@ export function getTargetPort(): number {
 	return TARGET_PORT ? parseInt(TARGET_PORT, 10) : 22;
 }
 
-export async function connectToTarget(client: Client): Promise<void> {
+export async function connectToTarget(): Promise<Client> {
 	const { TARGET_HOST, TARGET_USERNAME } = getTargetCredentials();
 
+	logger.log('Connecting to target...');
+
+	const client = new Client();
 	await client.connect({
 		host: TARGET_HOST,
 		port: getTargetPort(),
@@ -35,6 +41,7 @@ export async function connectToTarget(client: Client): Promise<void> {
 		privateKey: process.env.TARGET_SSH_PRIVATE_KEY,
 		keepaliveInterval: 10000,
 	});
+	return client;
 }
 
 export async function ensureDirectory(client: Client, directory: string): Promise<void> {
@@ -75,8 +82,6 @@ export async function getFileSize(client: Client, path: string): Promise<number>
 }
 
 export async function cleanupDirectory(client: Client, directory: string): Promise<number[]> {
-	await connectToTarget(client);
-
 	const files = (await client.list(directory))
 		.filter((f) => f.type === '-')
 		.sort((a, b) => parseDate(b.name).getTime() - parseDate(a.name).getTime());

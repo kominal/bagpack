@@ -5,7 +5,7 @@ import simpleGit from 'simple-git';
 import Client from 'ssh2-sftp-client';
 import { pipeline } from 'stream/promises';
 import { dirSync } from 'tmp';
-import { cleanupDirectory, ensureDirectory, generateFileName, getFileSize } from '../helpers/helpers';
+import { cleanupDirectory, connectToTarget, ensureDirectory, generateFileName, getFileSize } from '../helpers/helpers';
 import { Result } from '../helpers/result';
 import { ThroughputMeter } from '../helpers/throughput-meter';
 
@@ -13,7 +13,7 @@ import { ThroughputMeter } from '../helpers/throughput-meter';
 export class GitHubService {
 	private readonly logger = new Logger(GitHubService.name);
 
-	public async run(client: Client): Promise<Result | undefined> {
+	public async run(): Promise<Result | undefined> {
 		this.logger.log('Running backup process GITHUB...');
 
 		const { GITHUB_ORGANIZATION, GITHUB_PASSWORD } = process.env;
@@ -27,12 +27,14 @@ export class GitHubService {
 
 		try {
 			this.logger.log('Ensuring directory exists...');
+			const client = await connectToTarget();
 			await ensureDirectory(client, directory);
 			this.logger.log('Creating new backup...');
 			const size = await this.createBackup(client, directory, GITHUB_ORGANIZATION, GITHUB_PASSWORD);
 			this.logger.log('Cleanup up previous backups...');
 			const previousSizes = await cleanupDirectory(client, directory);
 			this.logger.log('Process completed successfully');
+			await client.end();
 
 			return { name: 'GitHub', success: true, size, previousSizes };
 		} catch (error) {
